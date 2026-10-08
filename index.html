@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>⚔️ رحلة ما بعد الظلام 2D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;font-family:'Segoe UI',Tahoma,sans-serif;touch-action:none;overscroll-behavior:none}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#000;position:fixed;margin:0;padding:0}
+#game{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
+#ui{position:fixed;inset:0;pointer-events:none;z-index:10}
+.chip{background:rgba(0,0,0,.75);border:2px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;font-size:12px;font-weight:bold;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
+
+#top{position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;gap:6px;align-items:flex-start;pointer-events:none}
+#info{display:flex;flex-direction:column;gap:4px;align-items:center;flex:1}
+#rightinfo{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+#minimap{width:110px;height:110px;background:rgba(0,0,0,.75);border:2px solid #4a2f7a;border-radius:10px;overflow:hidden;pointer-events:none}
+
+/* ============ FIXED QUESTS PANEL ============ */
+#questsPanel{position:absolute;top:130px;left:6px;width:200px;background:rgba(10,6,20,.9);border:2px solid #f5c542;border-radius:10px;padding:8px;pointer-events:none;z-index:15}
+#questsPanel .q-head{color:#f5c542;font-size:12px;font-weight:bold;text-align:center;margin-bottom:6px;border-bottom:1px solid #4a2f7a;padding-bottom:4px}
+.q-item{margin-bottom:5px;padding:4px 6px;background:rgba(36,21,66,.7);border-right:3px solid #4a90e2;border-radius:5px;font-size:10px;color:#fff}
+.q-item.main{border-right-color:#f5c542;background:rgba(70,50,20,.7)}
+.q-item .qn{font-weight:bold;font-size:10px;margin-bottom:2px;line-height:1.1}
+.q-item .qp{font-size:9px;color:#43aa8b}
+.q-item.done{opacity:.5}
+.q-item.done .qp{color:#888}
+
+#bottom{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;align-items:center;width:min(320px,50vw);pointer-events:none}
+.bar{width:100%;height:14px;background:#000;border:2px solid #4a2f7a;border-radius:8px;overflow:hidden;position:relative}
+.bar .fill{height:100%;transition:width .2s;border-radius:5px}
+.bar .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold;text-shadow:0 1px 2px #000}
+
+#joy{position:absolute;bottom:20px;left:20px;width:130px;height:130px;background:rgba(0,0,0,.4);border:3px solid rgba(255,255,255,.4);border-radius:50%;pointer-events:auto;touch-action:none}
+#joy .knob{position:absolute;width:56px;height:56px;background:radial-gradient(circle,#fff,#c0c0d0);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none}
+
+#right{position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:auto}
+.btn{width:64px;height:64px;background:rgba(0,0,0,.55);border:3px solid rgba(255,255,255,.35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;cursor:pointer;transition:.1s;text-shadow:0 1px 3px #000}
+.btn:active{transform:scale(.9);background:rgba(245,197,66,.5);border-color:#f5c542}
+.btn.fire{width:86px;height:86px;border-color:#e63946;background:rgba(230,57,70,.35);font-size:40px}
+.btn.block{border-color:#4a90e2;background:rgba(74,144,226,.3)}
+.btn.block.on{background:rgba(74,144,226,.8);border-color:#7fb3ff}
+.btn.small{width:52px;height:52px;font-size:24px}
+
+#leftbtns{position:absolute;bottom:160px;left:20px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+
+.panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(180deg,rgba(36,21,66,.98),rgba(15,10,25,.99));border:3px solid #f5c542;border-radius:16px;padding:14px;display:none;z-index:40;color:#fff;pointer-events:auto;width:min(92vw,560px);max-height:88vh;overflow:hidden;box-shadow:0 0 40px rgba(245,197,66,.4)}
+.panel.on{display:block}
+.panel h2{color:#f5c542;margin-bottom:8px;font-size:15px;text-align:center;border-bottom:1px solid #4a2f7a;padding-bottom:6px}
+.close-btn{position:absolute;top:6px;left:6px;background:#e63946;border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:2}
+.panel-body{overflow-y:auto;max-height:calc(88vh - 100px);padding-left:4px}
+.panel-body::-webkit-scrollbar{width:6px}
+.panel-body::-webkit-scrollbar-thumb{background:#f5c542;border-radius:3px}
+
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
+.tab{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:8px;padding:6px 12px;color:#fff;font-size:11px;font-weight:bold;cursor:pointer;transition:.15s}
+.tab.active{background:linear-gradient(135deg,#f5c542,#b8860b);color:#000;border-color:#fff3a0}
+
+/* Inventory 4x3 */
+#invGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.slot{aspect-ratio:1;background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;padding:4px;transition:.15s}
+.slot:active{transform:scale(.95)}
+.slot .ic{font-size:24px}
+.slot .nm{font-size:8px;font-weight:bold;margin-top:2px;text-align:center;line-height:1.1}
+.slot .qt{position:absolute;bottom:2px;right:4px;color:#f5c542;font-size:10px;font-weight:bold;text-shadow:0 1px 2px #000}
+.slot.empty{opacity:.3;cursor:default}
+
+/* Shop 5 columns */
+#shopGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.shop-item{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:8px;padding:5px 3px;text-align:center;cursor:pointer;transition:.15s;position:relative}
+.shop-item:active{transform:scale(.95)}
+.shop-item .ic{font-size:22px;display:block;margin-bottom:2px}
+.shop-item .nm{font-size:8px;font-weight:bold;line-height:1.1;margin-bottom:2px;height:20px;overflow:hidden}
+.shop-item .pr{color:#f5c542;font-size:9px;font-weight:bold}
+.shop-item.rarity-rare{border-color:#4a90e2}
+.shop-item.rarity-epic{border-color:#9b5de5}
+.shop-item.rarity-legendary{border-color:#f5c542;box-shadow:0 0 8px rgba(245,197,66,.4)}
+.shop-item.locked{opacity:.4;cursor:not-allowed}
+.shop-item.owned{border-color:#43aa8b;opacity:.7}
+
+/* Book recipes clickable */
+.recipe-card{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:.15s}
+.recipe-card:active{transform:scale(.98)}
+.recipe-card.craftable{border-color:#43aa8b;box-shadow:0 0 8px rgba(67,170,139,.3)}
+.recipe-card.craftable:active{background:rgba(67,170,139,.2)}
+.recipe-card.locked{opacity:.55}
+.recipe-card .ic{font-size:32px;line-height:1}
+.recipe-card .info{flex:1}
+.recipe-card .info .nm{font-size:12px;font-weight:bold;margin-bottom:3px}
+.recipe-card .info .stats{font-size:10px;color:#f5c542;margin-bottom:4px}
+.recipe-card .info .mats{font-size:9px;color:#c9a0ff;line-height:1.6}
+.recipe-card .info .mats span{display:inline-block;background:rgba(74,47,122,.5);padding:1px 5px;border-radius:4px;margin-left:3px;margin-bottom:2px}
+.recipe-card .info .mats span.ok{background:rgba(67,170,139,.3);color:#7bc98f}
+.recipe-card .info .mats span.miss{background:rgba(230,57,70,.3);color:#ff8888}
+.recipe-card .info .source{font-size:9px;color:#f5c542;margin-top:3px}
+
+#notif{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:18px;font-weight:bold;text-shadow:0 0 10px #000;opacity:0;pointer-events:none;text-align:center;white-space:nowrap;padding:10px 18px;background:rgba(0,0,0,.75);border-radius:10px;border:2px solid rgba(245,197,66,.5);z-index:60}
+#notif.show{animation:pop 1.5s ease-out}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}40%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-100%) scale(.9)}}
+
+#start{position:fixed;inset:0;background:radial-gradient(ellipse at center,#2a1a4e,#000);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
+#start h1{font-size:clamp(26px,6vw,44px);background:linear-gradient(180deg,#fff3a0,#f5c542,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold}
+#start .sun{font-size:60px;animation:fl 3s infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+#start p{color:#c9a0ff;font-style:italic;font-size:14px}
+.tbtn{padding:14px 32px;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;border:2px solid #4a2f7a;background:linear-gradient(135deg,#241542,#1a0f2e);color:#fff;transition:.2s;min-width:250px}
+.tbtn.gold{background:linear-gradient(135deg,#f5c542,#b8860b);color:#000;border-color:#fff3a0}
+
+#rot{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:20px;padding:20px;text-align:center}
+#rot.on{display:flex}
+#rot .ph{font-size:70px;animation:rp 2s infinite}
+@keyframes rp{0%,20%{transform:rotate(0)}50%,100%{transform:rotate(90deg)}}
+#rot h2{color:#f5c542}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="rot">
+  <div class="ph">📱</div>
+  <h2>أدر جهازك أفقيًا</h2>
+</div>
+
+<div id="ui">
+  <div id="top">
+    <div id="minimap"><canvas id="mmc" width="220" height="220"></canvas></div>
+    <div id="info">
+      <div class="chip" id="worldChip">🌲 وادي الفجر</div>
+      <div class="chip" id="stageChip">1/95</div>
+    </div>
+    <div id="rightinfo">
+      <div class="chip">💀 <span id="kills">0</span>/<span id="target">0</span></div>
+      <div class="chip">⭐ Lv<span id="lvl">1</span></div>
+      <div class="chip">🪙 <span id="gold">300</span></div>
+    </div>
+  </div>
+
+  <!-- FIXED QUESTS PANEL -->
+  <div id="questsPanel">
+    <div class="q-head">📜 المهام</div>
+    <div id="questsMini"></div>
+  </div>
+
+  <div id="leftbtns">
+    <div class="btn small" id="btn-shop">🛒</div>
+    <div class="btn small" id="btn-book">📖</div>
+    <div class="btn small" id="btn-bag">🎒</div>
+    <div class="btn small" id="btn-heal">🌿</div>
+  </div>
+
+  <div id="joy"><div class="knob"></div></div>
+
+  <div id="right">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="btn small" id="btn-switch">🔁</div>
+      <div class="btn block" id="btn-block">🛡️</div>
+    </div>
+    <div class="btn fire" id="btn-fire">⚔️</div>
+  </div>
+
+  <div id="bottom">
+    <div class="bar"><div class="fill" id="hpFill" style="background:linear-gradient(90deg,#43aa8b,#7bc98f);width:100%"></div><div class="txt" id="hpTxt">❤️ 150/150</div></div>
+    <div class="bar" style="height:8px"><div class="fill" id="mpFill" style="background:linear-gradient(90deg,#4a90e2,#7fb3ff);width:100%"></div></div>
+  </div>
+
+  <div id="notif"></div>
+
+  <!-- INVENTORY 4x3 -->
+  <div class="panel" id="inv">
+    <button class="close-btn" onclick="closeInv()">×</button>
+    <h2>🎒 الحقيبة</h2>
+    <div class="panel-body"><div id="invGrid"></div></div>
+  </div>
+
+  <!-- SHOP 5 columns scrollable -->
+  <div class="panel" id="shop">
+    <button class="close-btn" onclick="closeShop()">×</button>
+    <h2>🛒 المتجر — 🪙 <span id="shopGold">0</span></h2>
+    <div class="tabs">
+      <div class="tab active" data-shop="weapons">⚔️ أسلحة</div>
+      <div class="tab" data-shop="armors">🛡️ دروع</div>
+      <div class="tab" data-shop="potions">🧪 جرعات</div>
+      <div class="tab" data-shop="sell">💰 بيع</div>
+    </div>
+    <div class="panel-body"><div id="shopGrid"></div></div>
+  </div>
+
+  <!-- BOOK - recipes craftable -->
+  <div class="panel" id="book">
+    <button class="close-btn" onclick="closeBook()">×</button>
+    <h2>📖 كتيب المغامر — انقر للصناعة</h2>
+    <div class="tabs">
+      <div class="tab active" data-book="weapons">🗡️ أسلحة</div>
+      <div class="tab" data-book="armors">🛡️ دروع</div>
+      <div class="tab" data-book="potions">🧪 جرعات</div>
+    </div>
+    <div class="panel-body"><div id="bookContent"></div></div>
+  </div>
+</div>
+
+<div id="start">
+  <div class="sun">🌅</div>
+  <h1>رحلة ما بعد الظلام</h1>
+  <p>«بعد كل ظلام... يأتي الفجر.»</p>
+  <button class="tbtn gold" onclick="startGame('yousef')">🧑 العب بيوسف</button>
+  <button class="tbtn" onclick="startGame('timi')">👩 العب بتيمي</button>
+  <div style="color:#888;font-size:11px;margin-top:8px;max-width:420px;line-height:1.6">
+    🎮 جويستيك يسار • اسحب يمين للكاميرا<br>
+    ⚔️ هجوم • 🛡️ صد • 🛒 متجر • 📖 كتيب • 🎒 حقيبة<br>
+    📜 قائمة المهام ثابتة على اليسار — تُحدّث تلقائيًا
+  </div>
+</div>
+
+<script>
+'use strict';
+
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+var W = 0, H = 0;
+
+function resizeCanvas(){
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  checkRot();
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', function(){ setTimeout(resizeCanvas, 200); });
+function checkRot(){
+  var rot = document.getElementById('rot');
+  if(window.innerHeight > window.innerWidth && window.innerWidth < 800) rot.classList.add('on');
+  else rot.classList.remove('on');
+}
+
+// ============ الحالة ============
+var G = {
+  running:false, paused:false, time:0,
+  stage:1, world:1,
+  player:{ x:0, y:0, hp:150, hpMax:150, mp:80, mpMax:80, level:1, xp:0, xpNext:100,
+    gold:300, atk:20, def:8, dir:'down', anim:0, attackAnim:0, blockAnim:0, hurtAnim:0, invuln:0, kills:0 },
+  enemies:[], arrows:[], particles:[], herbs:[], drops:[], dmgNums:[],
+  buildings:[], trees:[], rocks:[],
+  cam:{ x:0, y:0 },
+  input:{ f:0, r:0, attack:false, block:false },
+  joy:{ jx:0, jy:0, active:false },
+  inventory:{},
+  currentWeapon:'iron_sword',
+  ownedWeapons:['iron_sword','wood_bow','training_dagger'],
+  ownedArmors:['adv_armor'],
+  arrowsCount:30,
+  arrowRegenTimer:0,
+  enemiesTotal:0,
+  currentShopTab:'weapons',
+  currentBookTab:'weapons',
+  stats:{ crafted:0, kills:0 }
+};
+
+// ============ الأسلحة ============
+var WEAPONS = {
+  iron_sword:{ name:'سيف حديدي', icon:'⚔️', type:'sword', damage:30, range:80, arc:1.7, speed:0.35, rarity:'common', price:0, sellPrice:50,
+    recipe:{ iron:6, wood:2, leather:1 } },
+  fire_sword:{ name:'سيف النار', icon:'🔥', type:'sword', damage:50, range:85, arc:1.8, speed:0.32, rarity:'rare', price:500, sellPrice:250,
+    recipe:{ iron_sword:1, redCrystal:2, volcanicOre:3 } },
+  ice_sword:{ name:'سيف الجليد', icon:'❄️', type:'sword', damage:55, range:85, arc:1.8, speed:0.36, rarity:'rare', price:600, sellPrice:300,
+    recipe:{ iron_sword:1, iceCrystal:3, iceOre:4 } },
+  royal_sword:{ name:'السيف الملكي', icon:'👑', type:'sword', damage:105, range:95, arc:1.9, speed:0.3, rarity:'legendary', price:3000, sellPrice:1500,
+    recipe:{ fire_sword:1, royalMetal:5, lightCrystal:3 } },
+  dawn_sword:{ name:'سيف الفجر', icon:'🌅', type:'sword', damage:150, range:100, arc:2.0, speed:0.28, rarity:'legendary', price:8000, sellPrice:4000,
+    recipe:{ royal_sword:1, lightCrystal:10 } },
+  training_dagger:{ name:'خنجر', icon:'🔪', type:'dagger', damage:15, range:55, arc:1.4, speed:0.18, rarity:'common', price:0, sellPrice:25,
+    recipe:{ iron:2, wood:2 } },
+  wind_dagger:{ name:'خنجر الرياح', icon:'🔪', type:'dagger', damage:28, range:60, arc:1.5, speed:0.16, rarity:'rare', price:400, sellPrice:200,
+    recipe:{ training_dagger:1, iron:3, windFeather:3 } },
+  shadow_dagger:{ name:'خنجر الظلال', icon:'🔪', type:'dagger', damage:55, range:60, arc:1.5, speed:0.15, rarity:'epic', price:900, sellPrice:450,
+    recipe:{ wind_dagger:1, darkCrystal:3, shadowEssence:5 } },
+  wood_bow:{ name:'قوس خشبي', icon:'🏹', type:'bow', damage:25, speed:0.55, projSpeed:700, rarity:'common', price:0, sellPrice:40,
+    recipe:{ wood:6, rope:2 } },
+  forest_bow:{ name:'قوس الغابة', icon:'🏹', type:'bow', damage:35, speed:0.5, projSpeed:750, rarity:'rare', price:500, sellPrice:250,
+    recipe:{ wood_bow:1, oldwood:4, root:2 } },
+  frost_bow:{ name:'قوس الصقيع', icon:'🏹', type:'bow', damage:48, speed:0.5, projSpeed:800, rarity:'rare', price:700, sellPrice:350,
+    recipe:{ forest_bow:1, iceCrystal:4 } },
+  light_bow:{ name:'قوس النور', icon:'🏹', type:'bow', damage:88, speed:0.45, projSpeed:900, rarity:'legendary', price:2500, sellPrice:1250,
+    recipe:{ frost_bow:1, lightCrystal:4 } }
+};
+
+// ============ الدروع ============
+var ARMORS = {
+  adv_armor:{ name:'درع المغامر', icon:'🛡️', hp:30, def:8, rarity:'common', price:200, sellPrice:100,
+    recipe:{ leather:5, cloth:3, iron:2 } },
+  forest_armor:{ name:'درع الغابة', icon:'🛡️', hp:80, def:20, rarity:'rare', price:800, sellPrice:400,
+    recipe:{ adv_armor:1, leather:5, root:3 } },
+  ice_armor:{ name:'درع الصقيع', icon:'🛡️', hp:120, def:30, rarity:'rare', price:1400, sellPrice:700,
+    recipe:{ forest_armor:1, iceFur:5, iceCrystal:4 } },
+  royal_armor:{ name:'الدرع الملكي', icon:'🛡️', hp:180, def:45, rarity:'legendary', price:3000, sellPrice:1500,
+    recipe:{ ice_armor:1, royalMetal:6, lightCrystal:2 } },
+  dawn_armor:{ name:'درع الفجر', icon:'🛡️', hp:260, def:65, rarity:'legendary', price:8000, sellPrice:4000,
+    recipe:{ royal_armor:1, lightCrystal:8 } }
+};
+
+// ============ العناصر والمواد ============
+var ITEMS = {
+  // أعشاب (تُجمع)
+  herb:{ name:'عشب طبي', icon:'🌿', heal:25, sellPrice:15 },
+  red_herb:{ name:'عشب أحمر', icon:'🌺', heal:60, sellPrice:35 },
+  blue_herb:{ name:'عشب أزرق', icon:'🔷', mp:40, sellPrice:30 },
+  mushroom:{ name:'فطر سحري', icon:'🍄', heal:100, sellPrice:60 },
+  berry:{ name:'توت', icon:'🍇', heal:15, sellPrice:8 },
+  // جرعات (تُصنع)
+  hp_small:{ name:'جرعة صغيرة', icon:'🧪', heal:50, sellPrice:25, price:50, recipe:{ herb:2, berry:1 } },
+  hp_med:{ name:'جرعة متوسطة', icon:'🧪', heal:150, sellPrice:70, price:150, recipe:{ hp_small:1, herb:3, mushroom:1 } },
+  hp_big:{ name:'جرعة كبيرة', icon:'🧪', heal:350, sellPrice:150, price:350, recipe:{ hp_med:1, red_herb:2, greencrystal:1 } },
+  mp_potion:{ name:'جرعة طاقة', icon:'🧴', mp:80, sellPrice:40, price:100, recipe:{ blue_herb:2, herb:2 } },
+  // مواد أساسية
+  wood:{ name:'خشب', icon:'🪵', sellPrice:5 },
+  iron:{ name:'حديد', icon:'⛏️', sellPrice:15 },
+  stone:{ name:'حجر', icon:'🪨', sellPrice:3 },
+  leather:{ name:'جلد', icon:'🟫', sellPrice:20 },
+  cloth:{ name:'قماش', icon:'🧵', sellPrice:10 },
+  rope:{ name:'حبل', icon:'🪢', sellPrice:12 },
+  // مواد متقدمة
+  oldwood:{ name:'خشب قديم', icon:'🌳', sellPrice:25 },
+  root:{ name:'جذر', icon:'🌱', sellPrice:18 },
+  greencrystal:{ name:'بلورة خضراء', icon:'💚', sellPrice:50 },
+  windFeather:{ name:'ريشة رياح', icon:'🪶', sellPrice:40 },
+  iceCrystal:{ name:'بلورة جليدية', icon:'❄️', sellPrice:70 },
+  iceOre:{ name:'خام جليدي', icon:'🧊', sellPrice:55 },
+  iceFur:{ name:'فرو جليدي', icon:'🐺', sellPrice:65 },
+  volcanicOre:{ name:'خام بركاني', icon:'🔥', sellPrice:100 },
+  redCrystal:{ name:'بلورة حمراء', icon:'🔴', sellPrice:130 },
+  royalMetal:{ name:'معدن ملكي', icon:'👑', sellPrice:200 },
+  lightCrystal:{ name:'بلورة نور', icon:'✨', sellPrice:250 },
+  darkCrystal:{ name:'بلورة ظلام', icon:'🖤', sellPrice:180 },
+  shadowEssence:{ name:'جوهر ظل', icon:'🌑', sellPrice:150 }
+};
+
+// ============ العوالم ============
+var WORLDS = [
+  { id:1, name:'وادي الفجر', icon:'🌲', start:1, end:15, grass:'#4a7c3a', grass2:'#3d6a2f', road:'#8a6b4a', tree:'#2a5a2a', trunk:'#5a3a20', building:'#d4b8a0', roof:'#8b4513', enemy:'#8b2c2c', enemyName:'ذئب' },
+  { id:2, name:'صحراء السراب', icon:'🌵', start:16, end:30, grass:'#c9a86a', grass2:'#b89858', road:'#8a6b4a', tree:'#8a7a3a', trunk:'#6a4a20', building:'#d4b88a', roof:'#8b6b3a', enemy:'#b35c2e', enemyName:'عقرب' },
+  { id:3, name:'مملكة الصقيع', icon:'❄️', start:31, end:45, grass:'#c8dce8', grass2:'#b0c8d4', road:'#7a8a9a', tree:'#8ab0c0', trunk:'#5a6a7a', building:'#a8c0d0', roof:'#5a7a8a', enemy:'#4a90e2', enemyName:'غولم' },
+  { id:4, name:'أعماق المرجان', icon:'🌊', start:46, end:60, grass:'#2a6a5a', grass2:'#1e5648', road:'#3a7a6a', tree:'#2a8a7a', trunk:'#3a5a4a', building:'#8ac0b0', roof:'#3a6a5a', enemy:'#2e8b7a', enemyName:'سلطعون' },
+  { id:5, name:'جبال اللهب', icon:'🔥', start:61, end:75, grass:'#5a2a10', grass2:'#4a2008', road:'#3a1a08', tree:'#6a2a1a', trunk:'#3a1a08', building:'#6a3a20', roof:'#3a1a0a', enemy:'#d4502c', enemyName:'وحش' },
+  { id:6, name:'المملكة القديمة', icon:'🏰', start:76, end:90, grass:'#5a4a3a', grass2:'#4a3a2a', road:'#3a2a1a', tree:'#5a4a3a', trunk:'#3a2a1a', building:'#a09080', roof:'#5a4a3a', enemy:'#8b6bc9', enemyName:'فارس' },
+  { id:7, name:'مملكة الظلال', icon:'🌑', start:91, end:95, grass:'#2a1a3a', grass2:'#1e0e2a', road:'#1a0a2a', tree:'#2a1a3a', trunk:'#100520', building:'#3a2a4a', roof:'#1a0a2a', enemy:'#9b5de5', enemyName:'شبح' }
+];
+function getWorld(s){ for(var i=0;i<WORLDS.length;i++) if(s>=WORLDS[i].start && s<=WORLDS[i].end) return WORLDS[i]; return WORLDS[0]; }
+
+// ============ توليد العالم ============
+function generateWorld(){
+  G.enemies = []; G.herbs = []; G.buildings = []; G.trees = []; G.rocks = [];
+  G.arrows = []; G.particles = []; G.drops = []; G.dmgNums = [];
+  
+  G.player.x = 0; G.player.y = 0;
+  
+  var world = getWorld(G.stage);
+  var isBoss = [15,30,45,60,75,90,95].indexOf(G.stage) >= 0;
+  var isMini = [10,25,40,55,71,73,86].indexOf(G.stage) >= 0;
+  
+  // أشجار
+  for(var i = 0; i < 45; i++){
+    var ang = Math.random() * Math.PI * 2;
+    var rad = 250 + Math.random() * 700;
+    var x = Math.cos(ang) * rad;
+    var y = Math.sin(ang) * rad;
+    if(Math.abs(x) < 180 && Math.abs(y) < 180) continue;
+    G.trees.push({ x:x, y:y, size:0.9+Math.random()*0.5, sway:Math.random()*6.28 });
+  }
+  
+  // مباني
+  var bSpots = [
+    [-320,-320,180,160],[320,-320,200,160],[-320,320,160,200],[320,320,200,200],
+    [-500,0,140,240],[500,0,140,240],[0,-500,280,140],[0,500,280,140],
+    [-600,-480,180,140],[600,-480,180,140],[-600,480,180,140],[600,480,180,140]
+  ];
+  bSpots.forEach(function(b){ G.buildings.push({ x:b[0], y:b[1], w:b[2], h:b[3] }); });
+  
+  // صخور
+  for(var i = 0; i < 25; i++){
+    var ang = Math.random() * Math.PI * 2;
+    var rad = 200 + Math.random() * 700;
+    var x = Math.cos(ang) * rad;
+    var y = Math.sin(ang) * rad;
+    if(Math.abs(x) < 150 && Math.abs(y) < 150) continue;
+    var ov = false;
+    for(var j = 0; j < G.buildings.length; j++){
+      var b = G.buildings[j];
+      if(Math.abs(x - b.x) < b.w/2 + 40 && Math.abs(y - b.y) < b.h/2 + 40){ ov = true; break; }
+    }
+    if(ov) continue;
+    G.rocks.push({ x:x, y:y, size:22+Math.random()*15 });
+  }
+  
+  // أعشاب
+  var herbKinds = ['herb','red_herb','blue_herb','mushroom','berry'];
+  for(var i = 0; i < 15; i++){
+    var ang = Math.random() * Math.PI * 2;
+    var rad = 150 + Math.random() * 600;
+    var x = Math.cos(ang) * rad;
+    var y = Math.sin(ang) * rad;
+    if(Math.abs(x) < 120 && Math.abs(y) < 120) continue;
+    G.herbs.push({ x:x, y:y, kind:herbKinds[Math.floor(Math.random()*herbKinds.length)], bob:Math.random()*6.28 });
+  }
+  
+  // أعداء
+  var count = isBoss ? 5 : isMini ? 5 : 4 + Math.floor(G.stage / 25);
+  G.enemiesTotal = count;
+  G.player.kills = 0;
+  
+  for(var i = 0; i < count; i++){
+    var isBoss2 = isBoss && i === 0;
+    var isMini2 = isMini && i === 0;
+    var ang = Math.random() * Math.PI * 2;
+    var rad = 200 + Math.random() * 400;
+    var x = Math.cos(ang) * rad;
+    var y = Math.sin(ang) * rad;
+    
+    var hp = isBoss2 ? 600 + G.stage * 30 : isMini2 ? 300 : 80 + G.stage * 4;
+    var dmg = isBoss2 ? 25 : isMini2 ? 18 : 8 + Math.floor(G.stage/10);
+    var rad2 = isBoss2 ? 45 : isMini2 ? 35 : 22;
+    
+    G.enemies.push({
+      x:x, y:y, hp:hp, hpMax:hp, damage:dmg,
+      speed: isBoss2 ? 80 : isMini2 ? 100 : 110 + Math.random()*40,
+      radius: rad2, isBoss:isBoss2, isMini:isMini2,
+      lastAttack:0, attackRate:1.2, state:'patrol',
+      patrolAngle:Math.random()*6.28, patrolTimer:Math.random()*2,
+      bob:Math.random()*6.28, hitFlash:0, world:world
+    });
+  }
+  
+  updateQuests();
+  updateUI();
+}
+
+// ============ المهام ============
+function updateQuests(){
+  var w = getWorld(G.stage);
+  var isBoss = [15,30,45,60,75,90,95].indexOf(G.stage) >= 0;
+  var quests = [];
+  
+  quests.push({
+    type:'main',
+    title: '👑 ' + (isBoss ? 'اهزم الزعيم' : 'أكمل المرحلة ' + G.stage),
+    current: G.player.kills || 0,
+    target: G.enemiesTotal,
+    done: (G.player.kills||0) >= G.enemiesTotal
+  });
+  
+  quests.push({
+    type:'side',
+    title: '🌿 اجمع 3 أعشاب',
+    current: countHerbs(),
+    target: 3,
+    done: countHerbs() >= 3
+  });
+  
+  quests.push({
+    type:'side',
+    title: '💰 امتلك 500 ذهب',
+    current: G.player.gold,
+    target: 500,
+    done: G.player.gold >= 500
+  });
+  
+  quests.push({
+    type:'side',
+    title: '⭐ المستوى 3',
+    current: G.player.level,
+    target: 3,
+    done: G.player.level >= 3
+  });
+  
+  quests.push({
+    type:'side',
+    title: '⚒️ اصنع 3 عناصر',
+    current: G.stats.crafted,
+    target: 3,
+    done: G.stats.crafted >= 3
+  });
+  
+  G.quests = quests;
+  renderQuestsMini();
+}
+
+function renderQuestsMini(){
+  var el = document.getElementById('questsMini');
+  var html = '';
+  G.quests.forEach(function(q){
+    var cls = 'q-item ' + q.type + (q.done ? ' done' : '');
+    html += '<div class="' + cls + '">' +
+      '<div class="qn">' + q.title + (q.done ? ' ✓' : '') + '</div>' +
+      '<div class="qp">' + q.current + ' / ' + q.target + '</div>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function countHerbs(){
+  var c = 0;
+  ['herb','red_herb','blue_herb','mushroom','berry'].forEach(function(k){ c += G.inventory[k] || 0; });
+  return c;
+}
+
+// ============ تصادم ============
+function collides(x, y, r){
+  for(var i = 0; i < G.buildings.length; i++){
+    var b = G.buildings[i];
+    if(Math.abs(x - b.x) < b.w/2 + r && Math.abs(y - b.y) < b.h/2 + r) return true;
+  }
+  return false;
+}
+
+// ============ اللاعب ============
+function updatePlayer(dt){
+  var p = G.player;
+  var sp = 280;
+  var mx = 0, my = 0;
+  var f = G.input.f + G.joy.jy;
+  var r = G.input.r + G.joy.jx;
+  
+  if(Math.abs(f) > 0.1 || Math.abs(r) > 0.1){
+    var len = Math.hypot(f, r);
+    mx = (r / len) * (sp * Math.min(1, len));
+    my = -(f / len) * (sp * Math.min(1, len));
+  }
+  
+  var spd = G.input.block ? 0.4 : 1;
+  var nx = p.x + mx * spd * dt;
+  var ny = p.y + my * spd * dt;
+  
+  if(!collides(nx, p.y, 25)) p.x = nx;
+  if(!collides(p.x, ny, 25)) p.y = ny;
+  
+  if(p.x < -1100) p.x = -1100;
+  if(p.x > 1100) p.x = 1100;
+  if(p.y < -1100) p.y = -1100;
+  if(p.y > 1100) p.y = 1100;
+  
+  if(Math.abs(mx) > 10 || Math.abs(my) > 10){
+    if(Math.abs(mx) > Math.abs(my)) p.dir = mx > 0 ? 'right' : 'left';
+    else p.dir = my > 0 ? 'down' : 'up';
+    p.anim += dt * 10;
+  } else p.anim = 0;
+  
+  p.attackAnim = Math.max(0, p.attackAnim - dt);
+  p.hurtAnim = Math.max(0, p.hurtAnim - dt);
+  p.invuln = Math.max(0, p.invuln - dt);
+  
+  if(G.input.block) p.blockAnim = Math.min(1, p.blockAnim + dt*10);
+  else p.blockAnim = Math.max(0, p.blockAnim - dt*10);
+  
+  if(G.input.attack) doAttack();
+  
+  // تجميع الأعشاب
+  for(var i = G.herbs.length - 1; i >= 0; i--){
+    var h = G.herbs[i];
+    if(Math.hypot(h.x - p.x, h.y - p.y) < 60){
+      G.inventory[h.kind] = (G.inventory[h.kind] || 0) + 1;
+      showNotif('🌿 ' + ITEMS[h.kind].name);
+      spawnParticles(h.x, h.y, '#44ff88', 10);
+      G.herbs.splice(i, 1);
+      updateQuests();
+    }
+  }
+  
+  // تجميع الإسقاطات
+  for(var i = G.drops.length - 1; i >= 0; i--){
+    var d = G.drops[i];
+    if(Math.hypot(d.x - p.x, d.y - p.y) < 60){
+      G.inventory[d.kind] = (G.inventory[d.kind] || 0) + 1;
+      showNotif('🎁 ' + (ITEMS[d.kind] ? ITEMS[d.kind].name : d.kind));
+      G.drops.splice(i, 1);
+    }
+  }
+  
+  p.mp = Math.min(p.mpMax, p.mp + dt * 3);
+  
+  // إعادة السهام
+  G.arrowRegenTimer += dt;
+  if(G.arrowRegenTimer > 1){
+    G.arrowRegenTimer = 0;
+    if(G.arrowsCount < 30){
+      G.arrowsCount = Math.min(30, G.arrowsCount + 2);
+    }
+  }
+}
+
+// ============ الهجوم ============
+function doAttack(){
+  var p = G.player;
+  var w = WEAPONS[G.currentWeapon];
+  var now = G.time;
+  if(now - (p._lastAttack||0) < w.speed) return;
+  p._lastAttack = now;
+  p.attackAnim = 0.35;
+  
+  if(w.type === 'bow'){
+    if(G.arrowsCount <= 0){ showNotif('🏹 نفدت السهام!'); return; }
+    G.arrowsCount--;
+    var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+    var facing = angles[p.dir] || 0;
+    var dirX = Math.cos(facing), dirY = Math.sin(facing);
+    G.arrows.push({ x:p.x, y:p.y, vx:dirX*w.projSpeed, vy:dirY*w.projSpeed, life:2, damage:w.damage });
+    return;
+  }
+  
+  var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+  var facing = angles[p.dir] || 0;
+  
+  for(var i = 0; i < G.enemies.length; i++){
+    var e = G.enemies[i];
+    var dx = e.x - p.x, dy = e.y - p.y;
+    var d = Math.hypot(dx, dy);
+    if(d > w.range + e.radius) continue;
+    var ang = Math.atan2(dy, dx);
+    var diff = Math.abs(((ang - facing + Math.PI*3) % (Math.PI*2)) - Math.PI);
+    if(diff > w.arc/2) continue;
+    hitEnemy(e, w.damage);
+  }
+  
+  for(var j = 0; j < 8; j++){
+    var a = facing + (Math.random()-0.5)*w.arc;
+    spawnParticles(p.x + Math.cos(a)*50, p.y + Math.sin(a)*50, '#ffdd66', 3);
+  }
+}
+
+function hitEnemy(e, dmg){
+  e.hp -= dmg;
+  e.hitFlash = 0.15;
+  G.dmgNums.push({ x:e.x, y:e.y, amount:Math.round(dmg), life:0.9, maxLife:0.9, vy:-60, color:'#ff4444' });
+  spawnParticles(e.x, e.y, '#ff6644', 8);
+  if(e.hp <= 0) killEnemy(e);
+}
+
+function killEnemy(e){
+  var idx = G.enemies.indexOf(e);
+  if(idx < 0) return;
+  G.enemies.splice(idx, 1);
+  
+  spawnParticles(e.x, e.y, getWorld(G.stage).enemy, 25);
+  G.player.gold += 20 + G.stage * 5;
+  G.player.xp += 25 + G.stage * 2;
+  G.player.kills++;
+  G.stats.kills++;
+  
+  while(G.player.xp >= G.player.xpNext){
+    G.player.xp -= G.player.xpNext;
+    G.player.level++;
+    G.player.xpNext = Math.floor(G.player.xpNext * 1.5);
+    G.player.hpMax += 15; G.player.hp = G.player.hpMax;
+    G.player.atk += 3; G.player.def += 1;
+    showNotif('🎉 مستوى ' + G.player.level + '!');
+  }
+  
+  // إسقاط مواد
+  if(Math.random() < 0.6){
+    var world = getWorld(G.stage);
+    var allMats = {
+      1:['wood','iron','leather','cloth','herb'],
+      2:['stone','iron','windFeather','herb'],
+      3:['iceCrystal','iceOre','iceFur','stone'],
+      4:['stone','iron','lightCrystal'],
+      5:['volcanicOre','redCrystal','iron'],
+      6:['royalMetal','lightCrystal','stone'],
+      7:['darkCrystal','shadowEssence','lightCrystal']
+    };
+    var list = allMats[world.id] || ['iron'];
+    var kind = list[Math.floor(Math.random()*list.length)];
+    G.drops.push({ x:e.x, y:e.y, kind:kind, bob:0 });
+  }
+  
+  updateUI();
+  updateQuests();
+  showNotif('💀 ' + getWorld(G.stage).enemyName + ' قُتل!');
+  
+  if(e.isBoss) setTimeout(nextStage, 1800);
+  else if(G.enemies.length === 0) setTimeout(nextStage, 1500);
+  saveGame();
+}
+
+// ============ الأعداء ============
+function updateEnemies(dt){
+  var p = G.player;
+  for(var i = 0; i < G.enemies.length; i++){
+    var e = G.enemies[i];
+    e.bob += dt * 4;
+    e.hitFlash = Math.max(0, e.hitFlash - dt);
+    
+    var dx = p.x - e.x, dy = p.y - e.y;
+    var d = Math.hypot(dx, dy);
+    
+    if(d < 20) e.state = 'attack';
+    else if(d < 400) e.state = 'chase';
+    else e.state = 'patrol';
+    
+    if(e.state === 'chase' || e.state === 'attack'){
+      if(d > 50){
+        var move = e.speed * dt;
+        var nx = e.x + dx/d * move;
+        var ny = e.y + dy/d * move;
+        if(!collides(nx, e.y, e.radius)) e.x = nx;
+        if(!collides(e.x, ny, e.radius)) e.y = ny;
+      }
+      if(d < 70 && G.time - e.lastAttack > e.attackRate){
+        e.lastAttack = G.time;
+        if(p.invuln <= 0){
+          var blocked = G.input.block && p.attackAnim <= 0;
+          var dmg = blocked ? Math.floor(e.damage * 0.15) : e.damage;
+          dmg = Math.max(1, dmg - Math.floor(p.def * 0.4));
+          p.hp -= dmg;
+          p.hurtAnim = 0.3;
+          p.invuln = 0.6;
+          G.dmgNums.push({ x:p.x, y:p.y, amount:dmg, life:0.9, maxLife:0.9, vy:-60, color: blocked ? '#4a90e2' : '#ff2244' });
+          flashDamage();
+          if(p.hp <= 0) playerDied();
+        }
+      }
+    } else {
+      e.patrolTimer -= dt;
+      if(e.patrolTimer <= 0){
+        e.patrolTimer = 2 + Math.random()*2;
+        e.patrolAngle = Math.random() * 6.28;
+      }
+      var move2 = e.speed * 0.3 * dt;
+      var nx2 = e.x + Math.cos(e.patrolAngle) * move2;
+      var ny2 = e.y + Math.sin(e.patrolAngle) * move2;
+      if(!collides(nx2, e.y, e.radius)) e.x = nx2;
+      if(!collides(e.x, ny2, e.radius)) e.y = ny2;
+    }
+  }
+}
+
+function playerDied(){
+  G.player.hp = 0;
+  G.paused = true;
+  showNotif('💀 هُزمت!');
+  setTimeout(function(){
+    G.player.hp = G.player.hpMax;
+    G.player.x = 0; G.player.y = 0;
+    G.paused = false;
+    updateUI();
+    showNotif('🌟 عدت للحياة!');
+  }, 2200);
+}
+
+function updateArrows(dt){
+  for(var i = G.arrows.length - 1; i >= 0; i--){
+    var a = G.arrows[i];
+    a.life -= dt;
+    a.x += a.vx * dt;
+    a.y += a.vy * dt;
+    var hit = false;
+    for(var j = 0; j < G.enemies.length; j++){
+      var e = G.enemies[j];
+      if(Math.hypot(e.x - a.x, e.y - a.y) < e.radius + 20){
+        hitEnemy(e, a.damage);
+        hit = true;
+        break;
+      }
+    }
+    if(hit || a.life <= 0) G.arrows.splice(i, 1);
+  }
+}
+
+function spawnParticles(x, y, color, count){
+  for(var i = 0; i < count; i++){
+    var a = Math.random() * 6.28;
+    var s = 50 + Math.random() * 150;
+    G.particles.push({ x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 60, life:0.6, maxLife:0.6, color:color, size:3+Math.random()*4 });
+  }
+}
+
+function updateParticles(dt){
+  for(var i = G.particles.length - 1; i >= 0; i--){
+    var p = G.particles[i];
+    p.life -= dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 200 * dt;
+    p.vx *= 0.96;
+    if(p.life <= 0) G.particles.splice(i, 1);
+  }
+  for(var j = G.dmgNums.length - 1; j >= 0; j--){
+    var d = G.dmgNums[j];
+    d.life -= dt;
+    d.y += d.vy * dt;
+    d.vy *= 0.92;
+    if(d.life <= 0) G.dmgNums.splice(j, 1);
+  }
+}
+
+function updateCamera(){
+  var p = G.player;
+  var tx = p.x - W / 2;
+  var ty = p.y - H / 2;
+  G.cam.x += (tx - G.cam.x) * 0.15;
+  G.cam.y += (ty - G.cam.y) * 0.15;
+}
+
+// ============ الحلقة ============
+var lastT = 0;
+function loop(t){
+  if(!G.running) return;
+  requestAnimationFrame(loop);
+  var dt = Math.min(0.05, (t - lastT) / 1000);
+  lastT = t;
+  G.time += dt;
+  
+  if(!G.paused){
+    updatePlayer(dt);
+    updateEnemies(dt);
+    updateArrows(dt);
+    updateParticles(dt);
+    updateCamera();
+  }
+  render();
+  updateMinimap();
+}
+
+// ============ الرسم 2D ============
+function render(){
+  var world = getWorld(G.stage);
+  var cx = G.cam.x, cy = G.cam.y;
+  
+  ctx.fillStyle = world.grass;
+  ctx.fillRect(0, 0, W, H);
+  
+  // نمط مربعات
+  var tileSize = 80;
+  var startX = Math.floor(cx / tileSize) * tileSize;
+  var startY = Math.floor(cy / tileSize) * tileSize;
+  for(var x = startX; x < cx + W + tileSize; x += tileSize){
+    for(var y = startY; y < cy + H + tileSize; y += tileSize){
+      if((Math.floor(x/tileSize) + Math.floor(y/tileSize)) % 2 === 0){
+        ctx.fillStyle = world.grass2;
+        ctx.fillRect(x - cx, y - cy, tileSize, tileSize);
+      }
+    }
+  }
+  
+  // طرق
+  ctx.fillStyle = world.road;
+  ctx.fillRect(-cx, -60 - cy, 2400, 120);
+  ctx.fillRect(-60 - cx, -cy, 120, 2400);
+  
+  ctx.save();
+  ctx.translate(-cx, -cy);
+  
+  // أشجار
+  for(var i = 0; i < G.trees.length; i++){
+    var tr = G.trees[i];
+    if(tr.x < cx - 100 || tr.x > cx + W + 100 || tr.y < cy - 100 || tr.y > cy + H + 100) continue;
+    var sway = Math.sin(G.time + tr.sway) * 3;
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath();
+    ctx.ellipse(tr.x, tr.y + 15, 30 * tr.size, 12 * tr.size, 0, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = world.trunk;
+    ctx.fillRect(tr.x - 8 * tr.size, tr.y - 30 * tr.size, 16 * tr.size, 45 * tr.size);
+    ctx.fillStyle = world.tree;
+    ctx.beginPath();
+    ctx.arc(tr.x + sway, tr.y - 50 * tr.size, 32 * tr.size, 0, 6.28);
+    ctx.fill();
+  }
+  
+  // صخور
+  for(var i = 0; i < G.rocks.length; i++){
+    var r = G.rocks[i];
+    if(r.x < cx - 100 || r.x > cx + W + 100 || r.y < cy - 100 || r.y > cy + H + 100) continue;
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath();
+    ctx.ellipse(r.x, r.y + r.size*0.6, r.size, r.size*0.4, 0, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = '#7a7a7a';
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.size, 0, 6.28);
+    ctx.fill();
+  }
+  
+  // مباني
+  for(var i = 0; i < G.buildings.length; i++){
+    var b = G.buildings[i];
+    if(b.x + b.w/2 < cx - 100 || b.x - b.w/2 > cx + W + 100) continue;
+    if(b.y + b.h/2 < cy - 100 || b.y - b.h/2 > cy + H + 100) continue;
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ctx.fillRect(b.x - b.w/2 + 10, b.y - b.h/2 + 10, b.w, b.h);
+    ctx.fillStyle = world.building;
+    ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
+    ctx.fillStyle = world.roof;
+    ctx.fillRect(b.x - b.w/2 - 8, b.y - b.h/2 - 12, b.w + 16, 30);
+    // نوافذ
+    ctx.fillStyle = '#ffcc66';
+    var cols = Math.max(2, Math.floor(b.w / 60));
+    var rows = Math.max(1, Math.floor(b.h / 60));
+    for(var r2 = 0; r2 < rows; r2++){
+      for(var c2 = 0; c2 < cols; c2++){
+        var wx = b.x - b.w/2 + 25 + c2 * (b.w - 50) / Math.max(1, cols - 1);
+        var wy = b.y - b.h/2 + 35 + r2 * (b.h - 50) / Math.max(1, rows);
+        ctx.fillRect(wx - 10, wy - 12, 20, 24);
+      }
+    }
+    // باب
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(b.x - 15, b.y + b.h/2 - 30, 30, 30);
+  }
+  
+  // أعشاب
+  for(var i = 0; i < G.herbs.length; i++){
+    var h = G.herbs[i];
+    if(h.x < cx - 60 || h.x > cx + W + 60 || h.y < cy - 60 || h.y > cy + H + 60) continue;
+    var yy = h.y + Math.sin(h.bob + G.time * 3) * 4;
+    var colors = { herb:'#44ff88', red_herb:'#ff5566', blue_herb:'#5588ff', mushroom:'#ff9944', berry:'#cc44ff' };
+    var c = colors[h.kind] || '#44ff88';
+    var grd = ctx.createRadialGradient(h.x, yy, 0, h.x, yy, 40);
+    grd.addColorStop(0, c + '88');
+    grd.addColorStop(1, c + '00');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(h.x, yy, 40, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.arc(h.x, yy, 8, 0, 6.28);
+    ctx.fill();
+  }
+  
+  // إسقاطات
+  for(var i = 0; i < G.drops.length; i++){
+    var d = G.drops[i];
+    d.bob += 0.05;
+    var yy = d.y + Math.sin(d.bob) * 4;
+    var c = ITEMS[d.kind] ? '#ffcc44' : '#888';
+    var grd = ctx.createRadialGradient(d.x, yy, 0, d.x, yy, 35);
+    grd.addColorStop(0, 'rgba(255,200,80,.6)');
+    grd.addColorStop(1, 'rgba(255,200,80,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(d.x, yy, 35, 0, 6.28);
+    ctx.fill();
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ITEMS[d.kind] ? ITEMS[d.kind].icon : '📦', d.x, yy);
+  }
+  
+  // سهام
+  for(var i = 0; i < G.arrows.length; i++){
+    var a = G.arrows[i];
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(Math.atan2(a.vy, a.vx));
+    ctx.fillStyle = '#ffcc44';
+    ctx.fillRect(-15, -3, 30, 6);
+    ctx.fillStyle = '#aaa';
+    ctx.beginPath();
+    ctx.moveTo(15, -5);
+    ctx.lineTo(25, 0);
+    ctx.lineTo(15, 5);
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  // أعداء
+  for(var i = 0; i < G.enemies.length; i++){
+    var e = G.enemies[i];
+    if(e.x < cx - 200 || e.x > cx + W + 200 || e.y < cy - 200 || e.y > cy + H + 200) continue;
+    var x = e.x, y = e.y + Math.sin(e.bob) * 3;
+    
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath();
+    ctx.ellipse(e.x, e.y + 18, e.radius * 1.2, 8, 0, 0, 6.28);
+    ctx.fill();
+    
+    var baseColor = e.hitFlash > 0 ? '#ffffff' : e.world.enemy;
+    ctx.fillStyle = baseColor;
+    ctx.beginPath();
+    ctx.arc(x, y - 5, e.isBoss ? 32 : e.isMini ? 26 : 18, 0, 6.28);
+    ctx.fill();
+    
+    // صدري
+    ctx.fillStyle = shade(baseColor, -20);
+    ctx.fillRect(x - 12, y - 5, 24, 20);
+    
+    // رأس
+    ctx.fillStyle = '#1a1a2a';
+    ctx.beginPath();
+    ctx.arc(x, y - 22, e.isBoss ? 18 : e.isMini ? 14 : 10, 0, 6.28);
+    ctx.fill();
+    
+    // عيون
+    ctx.fillStyle = '#ff0000';
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 10;
+    var eyeR = e.isBoss ? 4 : 2.5;
+    var eyeOff = e.isBoss ? 7 : 5;
+    ctx.beginPath();
+    ctx.arc(x - eyeOff, y - 22, eyeR, 0, 6.28);
+    ctx.arc(x + eyeOff, y - 22, eyeR, 0, 6.28);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // شريط صحة
+    var barW = e.isBoss ? 100 : e.isMini ? 70 : 44;
+    var barY = y - (e.isBoss ? 65 : e.isMini ? 55 : 42);
+    ctx.fillStyle = 'rgba(0,0,0,.85)';
+    ctx.fillRect(x - barW/2 - 2, barY - 2, barW + 4, 8);
+    ctx.fillStyle = '#e63946';
+    ctx.fillRect(x - barW/2, barY, barW, 4);
+    ctx.fillStyle = '#43aa8b';
+    ctx.fillRect(x - barW/2, barY, barW * Math.max(0, e.hp/e.hpMax), 4);
+    
+    // اسم الزعيم
+    if(e.isBoss){
+      ctx.font = 'bold 14px Tahoma';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#f5c542';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeText('👑 ' + e.world.enemyName + ' الزعيم', x, barY - 15);
+      ctx.fillText('👑 ' + e.world.enemyName + ' الزعيم', x, barY - 15);
+    }
+  }
+  
+  // اللاعب
+  drawPlayer(G.player);
+  
+  // جسيمات
+  for(var i = 0; i < G.particles.length; i++){
+    var p = G.particles[i];
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+  
+  // أرقام ضرر
+  ctx.font = 'bold 22px Tahoma';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4;
+  for(var i = 0; i < G.dmgNums.length; i++){
+    var d = G.dmgNums[i];
+    ctx.globalAlpha = Math.min(1, d.life / d.maxLife * 1.5);
+    ctx.strokeStyle = '#000';
+    ctx.fillStyle = d.color;
+    ctx.strokeText('-' + d.amount, d.x, d.y);
+    ctx.fillText('-' + d.amount, d.x, d.y);
+  }
+  ctx.globalAlpha = 1;
+  
+  ctx.restore();
+  
+  // وميض الضرر
+  if(G.player.hurtAnim > 0){
+    ctx.fillStyle = 'rgba(230,57,70,' + (G.player.hurtAnim * 2) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function drawPlayer(p){
+  var walking = (Math.abs(G.joy.jx) > 0.1 || Math.abs(G.joy.jy) > 0.1 || Math.abs(G.input.f) > 0);
+  var walkBob = walking ? Math.sin(p.anim * 2) * 2 : 0;
+  var x = p.x, y = p.y + walkBob;
+  
+  // ظل
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.y + 20, 22, 8, 0, 0, 6.28);
+  ctx.fill();
+  
+  var blink = p.invuln > 0 && Math.floor(p.invuln * 10) % 2 === 0;
+  ctx.globalAlpha = blink ? 0.5 : 1;
+  
+  // عباءة
+  ctx.fillStyle = '#c42c2c';
+  ctx.beginPath();
+  ctx.moveTo(x, y + 18);
+  ctx.lineTo(x - 20, y - 8);
+  ctx.lineTo(x + 20, y - 8);
+  ctx.closePath();
+  ctx.fill();
+  
+  // جسم
+  ctx.fillStyle = p.hurtAnim > 0 ? '#ff8888' : '#5a5a7a';
+  ctx.beginPath();
+  ctx.arc(x, y - 5, 18, 0, 6.28);
+  ctx.fill();
+  
+  // صدري
+  ctx.fillStyle = '#8a8aa0';
+  ctx.fillRect(x - 12, y - 12, 24, 18);
+  
+  // رأس
+  ctx.fillStyle = '#f0c098';
+  ctx.beginPath();
+  ctx.arc(x, y - 22, 12, 0, 6.28);
+  ctx.fill();
+  
+  // شعر
+  ctx.fillStyle = '#2a1a0a';
+  ctx.beginPath();
+  ctx.arc(x, y - 25, 12, Math.PI, 0);
+  ctx.fill();
+  
+  // عيون
+  ctx.fillStyle = '#000';
+  if(p.dir === 'down'){
+    ctx.fillRect(x - 4, y - 24, 2, 3);
+    ctx.fillRect(x + 2, y - 24, 2, 3);
+  } else if(p.dir === 'left'){
+    ctx.fillRect(x - 8, y - 24, 2, 3);
+  } else if(p.dir === 'right'){
+    ctx.fillRect(x + 6, y - 24, 2, 3);
+  }
+  
+  var w = WEAPONS[G.currentWeapon];
+  
+  // سيف
+  if(w.type === 'sword' || w.type === 'dagger'){
+    var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+    var facing = angles[p.dir] || 0;
+    var swingAng = facing - 0.6;
+    if(p.attackAnim > 0){
+      var prog = 1 - (p.attackAnim / 0.35);
+      swingAng = facing + (-0.9 + prog * 1.8);
+    }
+    
+    ctx.save();
+    ctx.translate(x, y - 5);
+    ctx.rotate(swingAng);
+    
+    ctx.fillStyle = '#f0c098';
+    ctx.beginPath();
+    ctx.arc(15, 0, 6, 0, 6.28);
+    ctx.fill();
+    
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(12, -3, 12, 6);
+    
+    ctx.fillStyle = '#f5c542';
+    ctx.fillRect(22, -8, 5, 16);
+    
+    // نصل
+    var bladeColor = '#e8e8f0';
+    if(w.rarity === 'rare') bladeColor = w.icon === '🔥' ? '#ff8844' : '#88ccff';
+    else if(w.rarity === 'legendary') bladeColor = '#ffe680';
+    ctx.fillStyle = bladeColor;
+    ctx.fillRect(26, -3, 40, 6);
+    ctx.beginPath();
+    ctx.moveTo(66, -3);
+    ctx.lineTo(76, 0);
+    ctx.lineTo(66, 3);
+    ctx.fill();
+    
+    ctx.restore();
+  }
+  
+  // قوس
+  if(w.type === 'bow'){
+    var angles2 = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+    var facing2 = angles2[p.dir] || 0;
+    ctx.save();
+    ctx.translate(x, y - 5);
+    ctx.rotate(facing2);
+    
+    ctx.fillStyle = '#f0c098';
+    ctx.beginPath();
+    ctx.arc(15, 0, 6, 0, 6.28);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#6b4a2a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(20, 0, 20, -Math.PI*0.7, Math.PI*0.7);
+    ctx.stroke();
+    
+    // وتر
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(20 + Math.cos(-Math.PI*0.7)*20, Math.sin(-Math.PI*0.7)*20);
+    ctx.lineTo(20 + Math.cos(Math.PI*0.7)*20, Math.sin(Math.PI*0.7)*20);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+  
+  // درع
+  if(p.blockAnim > 0){
+    var angles3 = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+    var facing3 = angles3[p.dir] || 0;
+    var shieldX = x - Math.sin(facing3) * 18;
+    var shieldY = y - 5 + Math.cos(facing3) * 18;
+    
+    ctx.save();
+    ctx.translate(shieldX, shieldY);
+    ctx.rotate(facing3);
+    
+    ctx.fillStyle = '#f5c542';
+    ctx.beginPath();
+    ctx.arc(0, 0, 18, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = '#8b4513';
+    ctx.beginPath();
+    ctx.arc(0, 0, 13, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = '#f5c542';
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, 6.28);
+    ctx.fill();
+    
+    ctx.restore();
+  }
+  
+  ctx.globalAlpha = 1;
+}
+
+function shade(hex, amt){
+  if(hex.charAt(0) === '#'){
+    var c = parseInt(hex.replace('#',''), 16);
+    var r = Math.min(255, Math.max(0, ((c >> 16) & 255) + amt));
+    var g = Math.min(255, Math.max(0, ((c >> 8) & 255) + amt));
+    var b = Math.min(255, Math.max(0, (c & 255) + amt));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+  return hex;
+}
+
+// ============ Minimap ============
+var mmc = document.getElementById('mmc');
+var mmx = mmc.getContext('2d');
+function updateMinimap(){
+  var size = 220;
+  var scale = size / 2400;
+  var cx = size / 2, cy = size / 2;
+  var world = getWorld(G.stage);
+  mmx.fillStyle = world.grass;
+  mmx.fillRect(0, 0, size, size);
+  mmx.fillStyle = world.road;
+  mmx.fillRect(0, cy - 60 * scale, size, 120 * scale);
+  mmx.fillRect(cx - 60 * scale, 0, 120 * scale, size);
+  mmx.fillStyle = 'rgba(60,40,20,.7)';
+  for(var i = 0; i < G.buildings.length; i++){
+    var b = G.buildings[i];
+    mmx.fillRect(cx + (b.x - b.w/2)*scale, cy + (b.y - b.h/2)*scale, b.w*scale, b.h*scale);
+  }
+  mmx.fillStyle = '#44ff88';
+  for(var i = 0; i < G.herbs.length; i++){
+    mmx.beginPath();
+    mmx.arc(cx + G.herbs[i].x * scale, cy + G.herbs[i].y * scale, 2, 0, 6.28);
+    mmx.fill();
+  }
+  for(var i = 0; i < G.enemies.length; i++){
+    var e = G.enemies[i];
+    mmx.fillStyle = e.isBoss ? '#f5c542' : e.isMini ? '#9b5de5' : '#e63946';
+    mmx.beginPath();
+    mmx.arc(cx + e.x * scale, cy + e.y * scale, e.isBoss ? 5 : 3, 0, 6.28);
+    mmx.fill();
+  }
+  mmx.fillStyle = '#43aa8b';
+  mmx.beginPath();
+  mmx.arc(cx + G.player.x * scale, cy + G.player.y * scale, 4, 0, 6.28);
+  mmx.fill();
+}
+
+// ============ UI ============
+function updateUI(){
+  var p = G.player;
+  document.getElementById('lvl').textContent = p.level;
+  document.getElementById('gold').textContent = p.gold;
+  document.getElementById('kills').textContent = p.kills || 0;
+  document.getElementById('target').textContent = G.enemiesTotal;
+  
+  var hpPct = Math.max(0, p.hp / p.hpMax * 100);
+  document.getElementById('hpFill').style.width = hpPct + '%';
+  document.getElementById('hpTxt').textContent = '❤️ ' + Math.round(p.hp) + '/' + p.hpMax;
+  if(hpPct < 30) document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#e63946,#ff6b81)';
+  else if(hpPct < 60) document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#f5a542,#ffcc66)';
+  else document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#43aa8b,#7bc98f)';
+  
+  document.getElementById('mpFill').style.width = (p.mp / p.mpMax * 100) + '%';
+  document.getElementById('shopGold').textContent = p.gold;
+}
+
+function updateWorldUI(){
+  var w = getWorld(G.stage);
+  document.getElementById('worldChip').textContent = w.icon + ' ' + w.name;
+  document.getElementById('stageChip').textContent = G.stage + '/95';
+}
+
+var notifT;
+function showNotif(txt){
+  var el = document.getElementById('notif');
+  el.textContent = txt;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(notifT);
+  notifT = setTimeout(function(){ el.classList.remove('show'); }, 1500);
+}
+
+var flashT;
+function flashDamage(){
+  document.body.style.background = '#300';
+  clearTimeout(flashT);
+  flashT = setTimeout(function(){ document.body.style.background = '#000'; }, 80);
+}
+
+// ============ الحقيبة 4x3 ============
+function renderInv(){
+  var grid = document.getElementById('invGrid');
+  var html = '';
+  var items = [];
+  Object.keys(G.inventory).forEach(function(k){
+    if(G.inventory[k] > 0 && ITEMS[k]) items.push({ key:k, data:ITEMS[k], qty:G.inventory[k] });
+  });
+  for(var i = 0; i < 12; i++){
+    if(i < items.length){
+      var it = items[i];
+      html += '<div class="slot" onclick="useItem(\'' + it.key + '\')">' +
+        '<div class="ic">' + it.data.icon + '</div>' +
+        '<div class="nm">' + it.data.name + '</div>' +
+        '<div class="qt">×' + it.qty + '</div>' +
+      '</div>';
+    } else {
+      html += '<div class="slot empty"></div>';
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function useItem(k){
+  var it = ITEMS[k];
+  if(!it || !G.inventory[k]) return;
+  if(it.heal){
+    if(G.player.hp >= G.player.hpMax){ showNotif('صحتك كاملة!'); return; }
+    G.player.hp = Math.min(G.player.hpMax, G.player.hp + it.heal);
+    showNotif('🌿 +' + it.heal);
+  }
+  if(it.mp) G.player.mp = Math.min(G.player.mpMax, G.player.mp + it.mp);
+  G.inventory[k]--;
+  if(G.inventory[k] <= 0) delete G.inventory[k];
+  updateUI();
+  renderInv();
+  saveGame();
+}
+
+function openInv(){ document.getElementById('inv').classList.add('on'); renderInv(); }
+function closeInv(){ document.getElementById('inv').classList.remove('on'); }
+
+// ============ المتجر 5 أعمدة ============
+function openShop(){ document.getElementById('shop').classList.add('on'); renderShop(); }
+function closeShop(){ document.getElementById('shop').classList.remove('on'); }
+
+function renderShop(){
+  var p = G.player;
+  document.getElementById('shopGold').textContent = p.gold;
+  var grid = document.getElementById('shopGrid');
+  var html = '';
+  var list = [];
+  
+  if(G.currentShopTab === 'weapons'){
+    ['fire_sword','ice_sword','royal_sword','dawn_sword','wind_dagger','shadow_dagger','forest_bow','frost_bow','light_bow'].forEach(function(wid){
+      var w = WEAPONS[wid];
+      if(w) list.push({ key:wid, data:w, isOwned:(G.ownedWeapons||[]).indexOf(wid)>=0, action:'buyWeapon', price:w.price });
+    });
+  } else if(G.currentShopTab === 'armors'){
+    ['forest_armor','ice_armor','royal_armor','dawn_armor'].forEach(function(aid){
+      var a = ARMORS[aid];
+      if(a) list.push({ key:aid, data:a, isOwned:(G.ownedArmors||[]).indexOf(aid)>=0, action:'buyArmor', price:a.price });
+    });
+  } else if(G.currentShopTab === 'potions'){
+    ['hp_small','hp_med','hp_big','mp_potion'].forEach(function(pid){
+      var it = ITEMS[pid];
+      if(it) list.push({ key:pid, data:it, isOwned:false, action:'buyPotion', price:it.price });
+    });
+  } else if(G.currentShopTab === 'sell'){
+    Object.keys(G.inventory).forEach(function(k){
+      if(G.inventory[k] > 0 && ITEMS[k] && ITEMS[k].sellPrice){
+        list.push({ key:k, data:ITEMS[k], isOwned:false, action:'sellItem', price:ITEMS[k].sellPrice, qty:G.inventory[k] });
+      }
+    });
+  }
+  
+  list.forEach(function(it){
+    var canBuy = p.gold >= it.price;
+    if(G.currentShopTab === 'sell'){
+      html += '<div class="shop-item" onclick="sellItem(\'' + it.key + '\')">' +
+        '<div class="ic">' + it.data.icon + '</div>' +
+        '<div class="nm">' + it.data.name + '</div>' +
+        '<div style="font-size:9px;color:#fff">×' + it.qty + '</div>' +
+        '<div class="pr">💰 ' + it.price + '</div>' +
+      '</div>';
+    } else if(it.isOwned){
+      html += '<div class="shop-item owned">' +
+        '<div class="ic">' + it.data.icon + '</div>' +
+        '<div class="nm">' + it.data.name + '</div>' +
+        '<div style="color:#43aa8b;font-size:9px">✓</div>' +
+      '</div>';
+    } else {
+      html += '<div class="shop-item rarity-' + (it.data.rarity||'common') + (canBuy?'':' locked') + '"' +
+        (canBuy ? ' onclick="' + it.action + '(\'' + it.key + '\',' + it.price + ')"' : '') + '>' +
+        '<div class="ic">' + it.data.icon + '</div>' +
+        '<div class="nm">' + it.data.name + '</div>' +
+        '<div class="pr">🪙' + it.price + '</div>' +
+      '</div>';
+    }
+  });
+  
+  if(list.length === 0) html = '<div style="color:#888;text-align:center;padding:20px;grid-column:1/-1">لا يوجد شيء</div>';
+  grid.innerHTML = html;
+}
+
+function buyWeapon(wid, price){
+  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
+  if(!G.ownedWeapons) G.ownedWeapons = [];
+  if(G.ownedWeapons.indexOf(wid) >= 0){ showNotif('تملكه بالفعل!'); return; }
+  G.player.gold -= price;
+  G.ownedWeapons.push(wid);
+  showNotif('✅ اشتريت ' + WEAPONS[wid].name);
+  updateUI(); renderShop(); saveGame();
+}
+
+function buyArmor(aid, price){
+  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
+  if(!G.ownedArmors) G.ownedArmors = [];
+  if(G.ownedArmors.indexOf(aid) >= 0){ showNotif('تملكه بالفعل!'); return; }
+  G.player.gold -= price;
+  G.ownedArmors.push(aid);
+  var a = ARMORS[aid];
+  G.player.hpMax += a.hp;
+  G.player.hp += a.hp;
+  G.player.def += a.def;
+  showNotif('✅ اشتريت ' + a.name);
+  updateUI(); renderShop(); saveGame();
+}
+
+function buyPotion(k, price){
+  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
+  G.player.gold -= price;
+  G.inventory[k] = (G.inventory[k] || 0) + 1;
+  showNotif('✅ اشتريت ' + ITEMS[k].name);
+  updateUI(); renderShop(); saveGame();
+}
+
+function sellItem(k){
+  if(!G.inventory[k]) return;
+  var price = ITEMS[k].sellPrice || 5;
+  G.inventory[k]--;
+  if(G.inventory[k] <= 0) delete G.inventory[k];
+  G.player.gold += price;
+  showNotif('💰 +' + price + ' ذهب');
+  updateUI(); renderShop(); saveGame();
+}
+
+// ============ الكتيب مع الصناعة ============
+function openBook(){ document.getElementById('book').classList.add('on'); renderBook(); }
+function closeBook(){ document.getElementById('book').classList.remove('on'); }
+
+function renderBook(){
+  var tab = G.currentBookTab;
+  var html = '';
+  var list = tab === 'weapons' ? WEAPONS : tab === 'armors' ? ARMORS : ITEMS;
+  
+  Object.keys(list).forEach(function(k){
+    var it = list[k];
+    if(!it.recipe) return;
+    
+    // تحقق من المواد
+    var canCraft = true;
+    var matsHtml = '';
+    Object.keys(it.recipe).forEach(function(m){
+      var need = it.recipe[m];
+      var have = G.inventory[m] || 0;
+      if(have < need) canCraft = false;
+      var mi = ITEMS[m] || WEAPONS[m] || ARMORS[m];
+      var name = mi ? (mi.icon + ' ' + mi.name) : m;
+      var cls = have >= need ? 'ok' : 'miss';
+      matsHtml += '<span class="' + cls + '">' + name + ' ×' + need + ' (' + have + ')</span>';
+    });
+    
+    var stats = '';
+    if(it.damage) stats = '⚔️ ' + it.damage + ' ضرر';
+    if(it.hp) stats = '❤️ +' + it.hp + ' | 🛡️ +' + it.def;
+    if(it.heal) stats = '❤️ +' + it.heal;
+    if(it.mp) stats = '⚡ +' + it.mp;
+    
+    html += '<div class="recipe-card' + (canCraft ? ' craftable' : ' locked') + '" onclick="craftItem(\'' + k + '\',\'' + tab + '\')">' +
+      '<div class="ic">' + (it.icon || '❓') + '</div>' +
+      '<div class="info">' +
+        '<div class="nm">' + (it.name || k) + '</div>' +
+        '<div class="stats">' + stats + '</div>' +
+        '<div class="mats">🧪 ' + matsHtml + '</div>' +
+        (canCraft ? '<div class="source">👆 اضغط للصناعة</div>' : '<div class="source" style="color:#ff8888">✗ مواد ناقصة</div>') +
+      '</div>' +
+    '</div>';
+  });
+  
+  if(!html) html = '<div style="color:#888;text-align:center;padding:20px">لا يوجد وصفات</div>';
+  document.getElementById('bookContent').innerHTML = html;
+}
+
+function craftItem(key, tab){
+  var list = tab === 'weapons' ? WEAPONS : tab === 'armors' ? ARMORS : ITEMS;
+  var it = list[key];
+  if(!it || !it.recipe){ showNotif('وصفة غير متوفرة!'); return; }
+  
+  // تحقق
+  for(var m in it.recipe){
+    if((G.inventory[m] || 0) < it.recipe[m]){
+      showNotif('❌ مواد ناقصة: ' + (ITEMS[m] ? ITEMS[m].name : m));
+      return;
+    }
+  }
+  
+  // خصم
+  for(var m in it.recipe){
+    G.inventory[m] -= it.recipe[m];
+    if(G.inventory[m] <= 0) delete G.inventory[m];
+  }
+  
+  // أضف
+  if(tab === 'weapons'){
+    if(!G.ownedWeapons) G.ownedWeapons = [];
+    if(G.ownedWeapons.indexOf(key) >= 0){
+      // اجعله سلاح قابل للتكديس
+      G.inventory['wpn_' + key] = (G.inventory['wpn_' + key] || 0) + 1;
+    } else {
+      G.ownedWeapons.push(key);
+    }
+  } else if(tab === 'armors'){
+    if(!G.ownedArmors) G.ownedArmors = [];
+    if(G.ownedArmors.indexOf(key) >= 0){
+      G.inventory['arm_' + key] = (G.inventory['arm_' + key] || 0) + 1;
+    } else {
+      G.ownedArmors.push(key);
+    }
+  } else {
+    // جرعة
+    G.inventory[key] = (G.inventory[key] || 0) + 1;
+  }
+  
+  G.stats.crafted++;
+  showNotif('⚒️ صنعت ' + it.name + '!');
+  spawnParticles(G.player.x, G.player.y, '#f5c542', 20);
+  updateUI();
+  updateQuests();
+  renderBook();
+  saveGame();
+}
+
+// ============ المرحلة التالية ============
+function nextStage(){
+  G.stage++;
+  if(G.stage > 95) G.stage = 1;
+  G.world = getWorld(G.stage).id;
+  generateWorld();
+  updateWorldUI();
+  updateUI();
+  showNotif('⚔️ ' + getWorld(G.stage).name);
+  saveGame();
+}
+
+// ============ الحفظ ============
+function saveGame(){
+  try{
+    localStorage.setItem('afterdark_2d_v1', JSON.stringify({
+      stage:G.stage, world:G.world,
+      player:{ level:G.player.level, hp:G.player.hp, hpMax:G.player.hpMax, gold:G.player.gold, xp:G.player.xp, xpNext:G.player.xpNext, atk:G.player.atk, def:G.player.def },
+      inventory:G.inventory,
+      ownedWeapons:G.ownedWeapons || [],
+      ownedArmors:G.ownedArmors || [],
+      currentWeapon:G.currentWeapon,
+      arrowsCount:G.arrowsCount,
+      stats:G.stats,
+      char:G._char
+    }));
+  }catch(e){}
+}
+function loadSave(){
+  try{ var r = localStorage.getItem('afterdark_2d_v1'); return r ? JSON.parse(r) : null; }catch(e){ return null; }
+}
+window.addEventListener('beforeunload', saveGame);
+setInterval(saveGame, 15000);
+
+// ============ الإدخال ============
+function setupInput(){
+  var keys = {};
+  window.addEventListener('keydown', function(e){
+    keys[e.key] = true;
+    updK();
+    if(e.key === ' ') e.preventDefault();
+    if(e.key === '1') switchWeapon('iron_sword');
+    if(e.key === '2') switchWeapon('wood_bow');
+    if(e.key === '3') switchWeapon('training_dagger');
+    if(e.key === 'i' || e.key === 'I') openInv();
+    if(e.key === 'b' || e.key === 'B') openShop();
+    if(e.key === 'm' || e.key === 'M') openBook();
+    if(e.key === 'e' || e.key === 'E') useFirstHerb();
+  });
+  window.addEventListener('keyup', function(e){ keys[e.key] = false; updK(); });
+  
+  function updK(){
+    var f = 0, r = 0;
+    if(keys['w'] || keys['W'] || keys['ArrowUp']) f++;
+    if(keys['s'] || keys['S'] || keys['ArrowDown']) f--;
+    if(keys['a'] || keys['A'] || keys['ArrowLeft']) r--;
+    if(keys['d'] || keys['D'] || keys['ArrowRight']) r++;
+    G.input.f = f;
+    G.input.r = r;
+  }
+  
+  // جويستيك
+  var joy = document.getElementById('joy');
+  var knob = joy.querySelector('.knob');
+  var active = false, cx0 = 0, cy0 = 0;
+  
+  function getCenter(el){
+    var r = el.getBoundingClientRect();
+    return { x: r.left + r.width/2, y: r.top + r.height/2 };
+  }
+  function handle(t){
+    var dx = t.clientX - cx0;
+    var dy = t.clientY - cy0;
+    var d = Math.hypot(dx, dy);
+    var max = 50;
+    var cd = Math.min(d, max);
+    var a = Math.atan2(dy, dx);
+    var nx = Math.cos(a) * cd, ny = Math.sin(a) * cd;
+    knob.style.transform = 'translate(calc(-50% + ' + nx + 'px), calc(-50% + ' + ny + 'px))';
+    G.joy.jx = nx / max;
+    G.joy.jy = -(ny / max);
+  }
+  
+  joy.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    active = true;
+    var c = getCenter(joy);
+    cx0 = c.x; cy0 = c.y;
+    handle(e.touches[0]);
+  }, {passive:false});
+  joy.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(!active) return;
+    handle(e.touches[0]);
+  }, {passive:false});
+  joy.addEventListener('touchend', function(e){
+    e.preventDefault();
+    active = false;
+    G.joy.jx = 0; G.joy.jy = 0;
+    knob.style.transform = 'translate(-50%,-50%)';
+  }, {passive:false});
+  
+  // أزرار
+  var fb = document.getElementById('btn-fire');
+  fb.addEventListener('touchstart', function(e){ e.preventDefault(); G.input.attack = true; }, {passive:false});
+  fb.addEventListener('touchend', function(e){ e.preventDefault(); G.input.attack = false; }, {passive:false});
+  fb.addEventListener('mousedown', function(e){ e.preventDefault(); G.input.attack = true; });
+  fb.addEventListener('mouseup', function(){ G.input.attack = false; });
+  
+  var bb = document.getElementById('btn-block');
+  bb.addEventListener('touchstart', function(e){ e.preventDefault(); G.input.block = true; bb.classList.add('on'); }, {passive:false});
+  bb.addEventListener('touchend', function(e){ e.preventDefault(); G.input.block = false; bb.classList.remove('on'); }, {passive:false});
+  bb.addEventListener('mousedown', function(e){ e.preventDefault(); G.input.block = true; bb.classList.add('on'); });
+  bb.addEventListener('mouseup', function(){ G.input.block = false; bb.classList.remove('on'); });
+  
+  document.getElementById('btn-switch').addEventListener('click', switchNext);
+  document.getElementById('btn-switch').addEventListener('touchstart', function(e){ e.preventDefault(); switchNext(); }, {passive:false});
+  
+  document.getElementById('btn-heal').addEventListener('click', useFirstHerb);
+  document.getElementById('btn-heal').addEventListener('touchstart', function(e){ e.preventDefault(); useFirstHerb(); }, {passive:false});
+  
+  document.getElementById('btn-bag').addEventListener('click', openInv);
+  document.getElementById('btn-bag').addEventListener('touchstart', function(e){ e.preventDefault(); openInv(); }, {passive:false});
+  
+  document.getElementById('btn-shop').addEventListener('click', openShop);
+  document.getElementById('btn-shop').addEventListener('touchstart', function(e){ e.preventDefault(); openShop(); }, {passive:false});
+  
+  document.getElementById('btn-book').addEventListener('click', openBook);
+  document.getElementById('btn-book').addEventListener('touchstart', function(e){ e.preventDefault(); openBook(); }, {passive:false});
+  
+  // التبويبات
+  document.querySelectorAll('[data-shop]').forEach(function(el){
+    var h = function(e){ if(e) e.preventDefault(); document.querySelectorAll('[data-shop]').forEach(function(t){ t.classList.remove('active'); }); el.classList.add('active'); G.currentShopTab = el.dataset.shop; renderShop(); };
+    el.addEventListener('click', h);
+    el.addEventListener('touchstart', h, {passive:false});
+  });
+  document.querySelectorAll('[data-book]').forEach(function(el){
+    var h = function(e){ if(e) e.preventDefault(); document.querySelectorAll('[data-book]').forEach(function(t){ t.classList.remove('active'); }); el.classList.add('active'); G.currentBookTab = el.dataset.book; renderBook(); };
+    el.addEventListener('click', h);
+    el.addEventListener('touchstart', h, {passive:false});
+  });
+}
+
+function switchWeapon(id){
+  if(!WEAPONS[id] || G.currentWeapon === id) return;
+  G.currentWeapon = id;
+  showNotif(WEAPONS[id].icon + ' ' + WEAPONS[id].name);
+}
+
+function switchNext(){
+  var all = ['iron_sword', 'wood_bow', 'training_dagger'];
+  if(G.ownedWeapons){
+    G.ownedWeapons.forEach(function(w){ if(all.indexOf(w) < 0) all.push(w); });
+  }
+  var idx = all.indexOf(G.currentWeapon);
+  switchWeapon(all[(idx+1) % all.length]);
+}
+
+function useFirstHerb(){
+  var order = ['mushroom', 'red_herb', 'herb', 'hp_big', 'hp_med', 'hp_small', 'blue_herb', 'berry'];
+  for(var i = 0; i < order.length; i++){
+    if(G.inventory[order[i]] > 0){ useItem(order[i]); return; }
+  }
+  showNotif('لا توجد أعشاب!');
+}
+
+// ============ البدء ============
+function startGame(char){
+  document.getElementById('start').style.display = 'none';
+  G._char = char;
+  
+  var save = loadSave();
+  if(save){
+    G.stage = save.stage || 1;
+    G.world = save.world || 1;
+    if(save.player){
+      var p = G.player;
+      p.level = save.player.level || 1;
+      p.hpMax = save.player.hpMax || 150;
+      p.hp = save.player.hp || p.hpMax;
+      p.gold = save.player.gold || 300;
+      p.xp = save.player.xp || 0;
+      p.xpNext = save.player.xpNext || 100;
+      p.atk = save.player.atk || 20;
+      p.def = save.player.def || 8;
+    }
+    if(save.inventory) for(var k in save.inventory) G.inventory[k] = save.inventory[k];
+    G.ownedWeapons = save.ownedWeapons || ['iron_sword', 'wood_bow', 'training_dagger'];
+    G.ownedArmors = save.ownedArmors || ['adv_armor'];
+    G.currentWeapon = save.currentWeapon || 'iron_sword';
+    G.arrowsCount = save.arrowsCount || 30;
+    if(save.stats) G.stats = save.stats;
+  } else {
+    G.inventory = { 
+      herb:5, red_herb:3, blue_herb:3, mushroom:2, berry:5, hp_small:3,
+      wood:10, iron:8, leather:5, cloth:4, rope:3, stone:6
+    };
+    G.ownedWeapons = ['iron_sword', 'wood_bow', 'training_dagger'];
+    G.ownedArmors = ['adv_armor'];
+    G.arrowsCount = 30;
+  }
+  
+  generateWorld();
+  updateWorldUI();
+  updateUI();
+  setupInput();
+  
+  G.running = true;
+  G.paused = false;
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+  
+  var w = getWorld(G.stage);
+  showNotif('⚔️ ' + w.name + ' — المرحلة ' + G.stage);
+}
+
+resizeCanvas();
+
+var s = loadSave();
+if(s){
+  var sb = document.getElementById('start');
+  var cb = document.createElement('button');
+  cb.className = 'tbtn';
+  cb.textContent = '📂 متابعة (المرحلة ' + s.stage + ')';
+  cb.onclick = function(){ startGame(s.char || 'yousef'); };
+  sb.insertBefore(cb, sb.querySelector('button'));
+}
+
+</script>
+</body>
+        </html>
