@@ -2,1785 +2,1318 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>⚔️ رحلة ما بعد الظلام 2D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>معادلات الخط المستقيم في الفراغ | هندسة فراغية – الثالث الثانوي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;font-family:'Segoe UI',Tahoma,sans-serif;touch-action:none;overscroll-behavior:none}
-html,body{width:100vw;height:100vh;overflow:hidden;background:#000;position:fixed;margin:0;padding:0}
-#game{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
-#ui{position:fixed;inset:0;pointer-events:none;z-index:10}
-.chip{background:rgba(0,0,0,.75);border:2px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;font-size:12px;font-weight:bold;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
+:root{
+  --primary:#1e3a8a;
+  --primary-light:#3b5bdb;
+  --primary-soft:#eef2ff;
+  --accent:#f59e0b;
+  --accent-soft:#fffbeb;
+  --green:#10b981;
+  --green-soft:#ecfdf5;
+  --red:#ef4444;
+  --red-soft:#fef2f2;
+  --purple:#7c3aed;
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --shadow:0 4px 20px rgba(15,23,42,.07);
+  --shadow-lg:0 12px 40px rgba(15,23,42,.12);
+}
 
-#top{position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;gap:6px;align-items:flex-start;pointer-events:none}
-#info{display:flex;flex-direction:column;gap:4px;align-items:center;flex:1}
-#rightinfo{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-#minimap{width:110px;height:110px;background:rgba(0,0,0,.75);border:2px solid #4a2f7a;border-radius:10px;overflow:hidden;pointer-events:none}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-padding-top:88px;}
 
-/* ============ FIXED QUESTS PANEL ============ */
-#questsPanel{position:absolute;top:130px;left:6px;width:200px;background:rgba(10,6,20,.9);border:2px solid #f5c542;border-radius:10px;padding:8px;pointer-events:none;z-index:15}
-#questsPanel .q-head{color:#f5c542;font-size:12px;font-weight:bold;text-align:center;margin-bottom:6px;border-bottom:1px solid #4a2f7a;padding-bottom:4px}
-.q-item{margin-bottom:5px;padding:4px 6px;background:rgba(36,21,66,.7);border-right:3px solid #4a90e2;border-radius:5px;font-size:10px;color:#fff}
-.q-item.main{border-right-color:#f5c542;background:rgba(70,50,20,.7)}
-.q-item .qn{font-weight:bold;font-size:10px;margin-bottom:2px;line-height:1.1}
-.q-item .qp{font-size:9px;color:#43aa8b}
-.q-item.done{opacity:.5}
-.q-item.done .qp{color:#888}
+body{
+  font-family:'Cairo',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.9;
+  font-size:16.5px;
+  -webkit-font-smoothing:antialiased;
+}
 
-#bottom{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:4px;align-items:center;width:min(320px,50vw);pointer-events:none}
-.bar{width:100%;height:14px;background:#000;border:2px solid #4a2f7a;border-radius:8px;overflow:hidden;position:relative}
-.bar .fill{height:100%;transition:width .2s;border-radius:5px}
-.bar .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold;text-shadow:0 1px 2px #000}
+/* ===== شريط التقدم ===== */
+#progress{
+  position:fixed;top:0;right:0;height:4px;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--primary-light));
+  z-index:999;transition:width .15s linear;border-radius:0 0 0 6px;
+}
 
-#joy{position:absolute;bottom:20px;left:20px;width:130px;height:130px;background:rgba(0,0,0,.4);border:3px solid rgba(255,255,255,.4);border-radius:50%;pointer-events:auto;touch-action:none}
-#joy .knob{position:absolute;width:56px;height:56px;background:radial-gradient(circle,#fff,#c0c0d0);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none}
+/* ===== الهيدر ===== */
+header{
+  background:
+    radial-gradient(circle at 12% 20%,rgba(245,158,11,.25),transparent 45%),
+    radial-gradient(circle at 88% 80%,rgba(124,58,237,.35),transparent 45%),
+    linear-gradient(135deg,#0f1e4d 0%,#1e3a8a 55%,#2d3f8f 100%);
+  color:#fff;padding:52px 20px 46px;text-align:center;position:relative;overflow:hidden;
+}
+header::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:46px 46px;pointer-events:none;
+}
+header .inner{position:relative;z-index:2;max-width:900px;margin:auto;}
+.badge{
+  display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);
+  padding:6px 20px;border-radius:999px;font-size:.85rem;font-weight:600;letter-spacing:.3px;
+  margin-bottom:16px;backdrop-filter:blur(6px);
+}
+header h1{font-size:clamp(1.6rem,4.6vw,2.7rem);font-weight:900;line-height:1.45;margin-bottom:12px;}
+header h1 span{color:#fbbf24;}
+header p{color:#c7d2fe;font-size:1.02rem;max-width:640px;margin:auto;font-weight:300;}
 
-#right{position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:auto}
-.btn{width:64px;height:64px;background:rgba(0,0,0,.55);border:3px solid rgba(255,255,255,.35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;cursor:pointer;transition:.1s;text-shadow:0 1px 3px #000}
-.btn:active{transform:scale(.9);background:rgba(245,197,66,.5);border-color:#f5c542}
-.btn.fire{width:86px;height:86px;border-color:#e63946;background:rgba(230,57,70,.35);font-size:40px}
-.btn.block{border-color:#4a90e2;background:rgba(74,144,226,.3)}
-.btn.block.on{background:rgba(74,144,226,.8);border-color:#7fb3ff}
-.btn.small{width:52px;height:52px;font-size:24px}
+.axes-deco{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px;}
+.axes-deco span{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);
+  padding:5px 15px;border-radius:10px;font-family:'Amiri',serif;font-size:1.05rem;color:#e0e7ff;
+}
 
-#leftbtns{position:absolute;bottom:160px;left:20px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+/* ===== شريط التنقل ===== */
+nav{
+  position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--border);
+  box-shadow:0 2px 16px rgba(15,23,42,.06);
+}
+.nav-inner{
+  max-width:1150px;margin:auto;display:flex;gap:8px;overflow-x:auto;
+  padding:11px 16px;scrollbar-width:none;
+}
+.nav-inner::-webkit-scrollbar{display:none;}
+.nav-inner a{
+  white-space:nowrap;text-decoration:none;color:var(--muted);font-weight:600;font-size:.9rem;
+  padding:8px 16px;border-radius:999px;transition:.22s;border:1px solid transparent;
+}
+.nav-inner a:hover{background:var(--primary-soft);color:var(--primary);}
+.nav-inner a.active{background:var(--primary);color:#fff;border-color:var(--primary);}
 
-.panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(180deg,rgba(36,21,66,.98),rgba(15,10,25,.99));border:3px solid #f5c542;border-radius:16px;padding:14px;display:none;z-index:40;color:#fff;pointer-events:auto;width:min(92vw,560px);max-height:88vh;overflow:hidden;box-shadow:0 0 40px rgba(245,197,66,.4)}
-.panel.on{display:block}
-.panel h2{color:#f5c542;margin-bottom:8px;font-size:15px;text-align:center;border-bottom:1px solid #4a2f7a;padding-bottom:6px}
-.close-btn{position:absolute;top:6px;left:6px;background:#e63946;border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:2}
-.panel-body{overflow-y:auto;max-height:calc(88vh - 100px);padding-left:4px}
-.panel-body::-webkit-scrollbar{width:6px}
-.panel-body::-webkit-scrollbar-thumb{background:#f5c542;border-radius:3px}
+/* ===== التخطيط ===== */
+main{max-width:1000px;margin:auto;padding:34px 16px 90px;}
+section{
+  background:var(--card);border-radius:20px;padding:30px 26px;margin-bottom:28px;
+  box-shadow:var(--shadow);border:1px solid var(--border);scroll-margin-top:90px;
+}
+@media(max-width:600px){section{padding:22px 16px;border-radius:16px;}}
 
-.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
-.tab{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:8px;padding:6px 12px;color:#fff;font-size:11px;font-weight:bold;cursor:pointer;transition:.15s}
-.tab.active{background:linear-gradient(135deg,#f5c542,#b8860b);color:#000;border-color:#fff3a0}
+.sec-head{display:flex;align-items:center;gap:13px;margin-bottom:8px;}
+.sec-num{
+  flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;font-weight:900;font-size:1.15rem;box-shadow:0 6px 16px rgba(30,58,138,.3);
+}
+.sec-head h2{font-size:1.35rem;font-weight:800;color:var(--primary);line-height:1.4;}
+.sec-line{height:3px;width:60px;background:linear-gradient(90deg,var(--accent),transparent);border-radius:3px;margin:12px 0 22px;}
 
-/* Inventory 4x3 */
-#invGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.slot{aspect-ratio:1;background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;padding:4px;transition:.15s}
-.slot:active{transform:scale(.95)}
-.slot .ic{font-size:24px}
-.slot .nm{font-size:8px;font-weight:bold;margin-top:2px;text-align:center;line-height:1.1}
-.slot .qt{position:absolute;bottom:2px;right:4px;color:#f5c542;font-size:10px;font-weight:bold;text-shadow:0 1px 2px #000}
-.slot.empty{opacity:.3;cursor:default}
+h3{font-size:1.08rem;font-weight:800;color:#1e293b;margin:24px 0 10px;display:flex;align-items:center;gap:9px;}
+h3::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;}
+h4{font-size:1rem;font-weight:700;color:var(--primary);margin:16px 0 8px;}
 
-/* Shop 5 columns */
-#shopGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.shop-item{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:8px;padding:5px 3px;text-align:center;cursor:pointer;transition:.15s;position:relative}
-.shop-item:active{transform:scale(.95)}
-.shop-item .ic{font-size:22px;display:block;margin-bottom:2px}
-.shop-item .nm{font-size:8px;font-weight:bold;line-height:1.1;margin-bottom:2px;height:20px;overflow:hidden}
-.shop-item .pr{color:#f5c542;font-size:9px;font-weight:bold}
-.shop-item.rarity-rare{border-color:#4a90e2}
-.shop-item.rarity-epic{border-color:#9b5de5}
-.shop-item.rarity-legendary{border-color:#f5c542;box-shadow:0 0 8px rgba(245,197,66,.4)}
-.shop-item.locked{opacity:.4;cursor:not-allowed}
-.shop-item.owned{border-color:#43aa8b;opacity:.7}
+p{margin-bottom:11px;color:#334155;}
+ul,ol{margin:10px 0 14px;padding-inline-start:22px;}
+li{margin-bottom:7px;color:#334155;}
+li::marker{color:var(--primary-light);font-weight:700;}
 
-/* Book recipes clickable */
-.recipe-card{background:rgba(20,15,35,.9);border:2px solid #4a2f7a;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:.15s}
-.recipe-card:active{transform:scale(.98)}
-.recipe-card.craftable{border-color:#43aa8b;box-shadow:0 0 8px rgba(67,170,139,.3)}
-.recipe-card.craftable:active{background:rgba(67,170,139,.2)}
-.recipe-card.locked{opacity:.55}
-.recipe-card .ic{font-size:32px;line-height:1}
-.recipe-card .info{flex:1}
-.recipe-card .info .nm{font-size:12px;font-weight:bold;margin-bottom:3px}
-.recipe-card .info .stats{font-size:10px;color:#f5c542;margin-bottom:4px}
-.recipe-card .info .mats{font-size:9px;color:#c9a0ff;line-height:1.6}
-.recipe-card .info .mats span{display:inline-block;background:rgba(74,47,122,.5);padding:1px 5px;border-radius:4px;margin-left:3px;margin-bottom:2px}
-.recipe-card .info .mats span.ok{background:rgba(67,170,139,.3);color:#7bc98f}
-.recipe-card .info .mats span.miss{background:rgba(230,57,70,.3);color:#ff8888}
-.recipe-card .info .source{font-size:9px;color:#f5c542;margin-top:3px}
+strong{color:var(--primary);font-weight:800;}
 
-#notif{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:18px;font-weight:bold;text-shadow:0 0 10px #000;opacity:0;pointer-events:none;text-align:center;white-space:nowrap;padding:10px 18px;background:rgba(0,0,0,.75);border-radius:10px;border:2px solid rgba(245,197,66,.5);z-index:60}
-#notif.show{animation:pop 1.5s ease-out}
-@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}40%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-100%) scale(.9)}}
+/* ===== الرموز والصيغ ===== */
+.sym{
+  font-family:'Amiri',serif;font-weight:700;color:var(--primary);
+  background:var(--primary-soft);padding:1px 7px;border-radius:6px;
+  display:inline-block;line-height:1.5;font-size:1.05em;
+}
+.sym-a{background:var(--accent-soft);color:#b45309;}
+.sym-g{background:var(--green-soft);color:#047857;}
 
-#start{position:fixed;inset:0;background:radial-gradient(ellipse at center,#2a1a4e,#000);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
-#start h1{font-size:clamp(26px,6vw,44px);background:linear-gradient(180deg,#fff3a0,#f5c542,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:bold}
-#start .sun{font-size:60px;animation:fl 3s infinite}
-@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
-#start p{color:#c9a0ff;font-style:italic;font-size:14px}
-.tbtn{padding:14px 32px;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;border:2px solid #4a2f7a;background:linear-gradient(135deg,#241542,#1a0f2e);color:#fff;transition:.2s;min-width:250px}
-.tbtn.gold{background:linear-gradient(135deg,#f5c542,#b8860b);color:#000;border-color:#fff3a0}
+.eq{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+  gap:8px 14px;direction:rtl;
+  background:linear-gradient(135deg,#f8fafc,#eef2ff);
+  border:1px solid #dbe3f0;border-inline-start:5px solid var(--primary);
+  border-radius:14px;padding:18px 16px;margin:16px 0;
+  font-family:'Amiri','Cambria Math',serif;font-size:1.28rem;color:#0f172a;
+  line-height:1.6;overflow-x:auto;
+}
+.eq.amber{border-inline-start-color:var(--accent);background:linear-gradient(135deg,#fffdf7,#fffbeb);}
+.eq.green{border-inline-start-color:var(--green);background:linear-gradient(135deg,#f7fefb,#ecfdf5);}
+.eq.purple{border-inline-start-color:var(--purple);background:linear-gradient(135deg,#faf8ff,#f3f0ff);}
+.eq .tag{
+  font-family:'Cairo',sans-serif;font-size:.72rem;font-weight:700;color:#fff;
+  background:var(--primary);padding:3px 12px;border-radius:999px;letter-spacing:.2px;
+}
+.eq.amber .tag{background:var(--accent);}
+.eq.green .tag{background:var(--green);}
+.eq.purple .tag{background:var(--purple);}
 
-#rot{position:fixed;inset:0;background:#000;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:20px;padding:20px;text-align:center}
-#rot.on{display:flex}
-#rot .ph{font-size:70px;animation:rp 2s infinite}
-@keyframes rp{0%,20%{transform:rotate(0)}50%,100%{transform:rotate(90deg)}}
-#rot h2{color:#f5c542}
+.frac{display:inline-flex;flex-direction:column;align-items:center;direction:rtl;vertical-align:middle;line-height:1.3;margin:0 2px;}
+.frac .n{padding:0 9px 3px;border-bottom:2px solid #1e3a8a;white-space:nowrap;}
+.frac .d{padding:3px 9px 0;white-space:nowrap;}
+.eq.amber .frac .n{border-bottom-color:#b45309;}
+.eq.green .frac .n{border-bottom-color:#047857;}
+.eq.purple .frac .n{border-bottom-color:#6d28d9;}
+
+.vec{
+  font-family:'Amiri',serif;font-weight:700;
+  border-top:1.5px solid currentColor;padding-top:1px;display:inline-block;line-height:1.05;
+}
+/* تمييز الحروف الثابتة (أ، ب، ج) عن المتغيرات (س، ص، ع) */
+.abc{color:#b45309;font-weight:700;}
+.xyz{color:#1e3a8a;font-weight:700;}
+.par{color:#7c3aed;font-weight:700;}
+
+/* ===== صناديق ===== */
+.box{border-radius:14px;padding:16px 18px;margin:16px 0;border:1px solid;position:relative;}
+.box .box-title{font-weight:800;font-size:.98rem;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0;}
+.tip{background:var(--accent-soft);border-color:#fde68a;}
+.tip .box-title{color:#b45309;}
+.note{background:var(--primary-soft);border-color:#c7d2fe;}
+.note .box-title{color:var(--primary);}
+.warn{background:var(--red-soft);border-color:#fecaca;}
+.warn .box-title{color:#b91c1c;}
+.ok{background:var(--green-soft);border-color:#a7f3d0;}
+.ok .box-title{color:#047857;}
+
+/* ===== جداول ===== */
+.table-wrap{overflow-x:auto;margin:16px 0;border-radius:14px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;min-width:440px;font-size:.94rem;background:#fff;}
+th{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 14px;font-weight:700;text-align:right;font-size:.9rem;}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:#334155;vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:nth-child(even){background:#f8fafc;}
+tbody tr:hover{background:var(--primary-soft);}
+
+/* ===== الأمثلة ===== */
+.example{border:1px solid var(--border);border-radius:16px;margin:18px 0;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.04);}
+.ex-head{
+  background:linear-gradient(135deg,#f1f5f9,#e2e8f0);padding:13px 18px;
+  display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none;transition:.2s;
+}
+.ex-head:hover{background:linear-gradient(135deg,#e2e8f0,#cbd5e1);}
+.ex-num{
+  flex:none;width:34px;height:34px;border-radius:10px;background:var(--primary);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:.9rem;
+}
+.ex-head h4{flex:1;margin:0;color:#1e293b;font-size:.98rem;font-weight:700;}
+.ex-toggle{flex:none;color:var(--primary);font-size:1.2rem;transition:transform .3s;font-weight:700;}
+.example.open .ex-toggle{transform:rotate(180deg);}
+.ex-body{max-height:0;overflow:hidden;transition:max-height .45s ease;background:#fff;}
+.example.open .ex-body{max-height:3000px;}
+.ex-inner{padding:18px;border-top:1px solid var(--border);}
+
+.step{display:flex;gap:12px;margin-bottom:14px;}
+.step-n{
+  flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);
+  color:#fff;font-size:.78rem;font-weight:800;display:grid;place-items:center;margin-top:4px;
+}
+.step-c{flex:1;}
+.step-c p{margin-bottom:6px;}
+
+/* ===== شبكة البطاقات ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:16px 0;}
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;
+  transition:.25s;position:relative;overflow:hidden;
+}
+.card::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--primary-light);}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:#c7d2fe;}
+.card h4{margin:0 0 7px;font-size:.98rem;color:var(--primary);}
+.card p{font-size:.88rem;color:var(--muted);margin:0;line-height:1.75;}
+.card.c1::before{background:var(--primary-light);}
+.card.c2::before{background:var(--accent);}
+.card.c3::before{background:var(--green);}
+.card.c4::before{background:var(--purple);}
+
+/* ===== الاختبار ===== */
+.quiz-item{border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;background:#fcfdff;}
+.q-text{font-weight:700;color:#1e293b;margin-bottom:12px;font-size:.96rem;}
+.opts{display:flex;flex-direction:column;gap:8px;}
+.opt{
+  text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-family:'Cairo',sans-serif;font-size:.92rem;cursor:pointer;
+  transition:.18s;color:#334155;font-weight:600;
+}
+.opt:hover:not(:disabled){border-color:var(--primary-light);background:var(--primary-soft);}
+.opt:disabled{cursor:default;}
+.opt.correct{background:var(--green-soft);border-color:var(--green);color:#047857;}
+.opt.wrong{background:var(--red-soft);border-color:var(--red);color:#b91c1c;}
+.feedback{margin-top:10px;font-size:.88rem;font-weight:700;display:none;padding:9px 13px;border-radius:9px;}
+.feedback.show{display:block;}
+.feedback.good{background:var(--green-soft);color:#047857;border:1px solid #a7f3d0;}
+.feedback.bad{background:var(--red-soft);color:#b91c1c;border:1px solid #fecaca;}
+
+.score{
+  text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;border-radius:14px;padding:18px;margin-top:16px;font-weight:800;display:none;
+}
+.score.show{display:block;}
+.score b{font-size:1.6rem;display:block;color:#fbbf24;}
+
+/* ===== الفوتر ===== */
+footer{
+  background:linear-gradient(135deg,#0f1e4d,#1e3a8a);color:#c7d2fe;text-align:center;
+  padding:34px 20px;font-size:.9rem;
+}
+footer strong{color:#fbbf24;display:block;margin-bottom:6px;font-size:1rem;}
+
+/* ===== زر العودة ===== */
+#top-btn{
+  position:fixed;bottom:22px;inset-inline-start:22px;width:46px;height:46px;border-radius:50%;
+  background:var(--primary);color:#fff;border:none;font-size:1.2rem;cursor:pointer;
+  box-shadow:0 8px 22px rgba(30,58,138,.4);opacity:0;pointer-events:none;transition:.3s;z-index:90;
+}
+#top-btn.show{opacity:1;pointer-events:auto;}
+#top-btn:hover{background:var(--primary-light);transform:translateY(-3px);}
+
+@media print{
+  nav,#top-btn,#progress,header::after{display:none;}
+  section{break-inside:avoid;box-shadow:none;border:1px solid #ccc;}
+  .ex-body{max-height:none!important;}
+}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
 
-<div id="rot">
-  <div class="ph">📱</div>
-  <h2>أدر جهازك أفقيًا</h2>
-</div>
+<div id="progress"></div>
 
-<div id="ui">
-  <div id="top">
-    <div id="minimap"><canvas id="mmc" width="220" height="220"></canvas></div>
-    <div id="info">
-      <div class="chip" id="worldChip">🌲 وادي الفجر</div>
-      <div class="chip" id="stageChip">1/95</div>
-    </div>
-    <div id="rightinfo">
-      <div class="chip">💀 <span id="kills">0</span>/<span id="target">0</span></div>
-      <div class="chip">⭐ Lv<span id="lvl">1</span></div>
-      <div class="chip">🪙 <span id="gold">300</span></div>
+<!-- ================= الهيدر ================= -->
+<header>
+  <div class="inner">
+    <div class="badge">هندسة فراغية · الوحدة الثانية · الدرس الأول</div>
+    <h1>معادلات الخط المستقيم <span>في الفراغ</span></h1>
+    <p>شرح كامل بالرموز العربية، مع كل التريكات والأفكار وأسئلة الامتحان — الصف الثالث الثانوي</p>
+    <div class="axes-deco">
+      <span>المحور السيني: س</span>
+      <span>المحور الصادي: ص</span>
+      <span>المحور العيني: ع</span>
     </div>
   </div>
+</header>
 
-  <!-- FIXED QUESTS PANEL -->
-  <div id="questsPanel">
-    <div class="q-head">📜 المهام</div>
-    <div id="questsMini"></div>
+<!-- ================= التنقل ================= -->
+<nav>
+  <div class="nav-inner">
+    <a href="#intro">1 · تمهيد</a>
+    <a href="#equation">2 · المعادلات</a>
+    <a href="#tricks">3 · التريكات</a>
+    <a href="#relative">4 · الوضع النسبي</a>
+    <a href="#angle">5 · الزاوية والمسافة</a>
+    <a href="#examples">6 · أمثلة محلولة</a>
+    <a href="#quiz">7 · اختبر نفسك</a>
+    <a href="#summary">8 · الملخص</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ================= 1. تمهيد ================= -->
+<section id="intro">
+  <div class="sec-head">
+    <div class="sec-num">1</div>
+    <h2>تمهيد: المتجهات ونظام الإحداثيات في الفراغ</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <p>قبل ما ندخل في معادلة الخط المستقيم، لازم نثبّت الأساسيات دي كويس جدًا، لأن كل التريكات بتبني عليها.</p>
+
+  <h3>أولًا: نظام الإحداثيات في الفراغ</h3>
+  <p>في الفراغ نستخدم <strong>ثلاثة محاور متعامدة</strong> تلتقي في نقطة واحدة اسمها <strong>نقطة الأصل</strong>:</p>
+  <div class="grid">
+    <div class="card c1"><h4>المحور السيني (س)</h4><p>متجه وحدته <span class="sym">(1 ، 0 ، 0)</span></p></div>
+    <div class="card c2"><h4>المحور الصادي (ص)</h4><p>متجه وحدته <span class="sym">(0 ، 1 ، 0)</span></p></div>
+    <div class="card c3"><h4>المحور العيني (ع)</h4><p>متجه وحدته <span class="sym">(0 ، 0 ، 1)</span></p></div>
   </div>
 
-  <div id="leftbtns">
-    <div class="btn small" id="btn-shop">🛒</div>
-    <div class="btn small" id="btn-book">📖</div>
-    <div class="btn small" id="btn-bag">🎒</div>
-    <div class="btn small" id="btn-heal">🌿</div>
+  <p>وأي نقطة في الفراغ بنعبّر عنها بـ <strong>ثلاثية مرتبة</strong>: <span class="sym">(س ، ص ، ع)</span> — يعني <span class="sym">ا(س<sub>1</sub> ، ص<sub>1</sub> ، ع<sub>1</sub>)</span>.</p>
+
+  <h3>ثانيًا: المتجه في الفراغ</h3>
+  <p>المتجه <span class="vec sym">د</span> اللي مركباته <span class="abc">أ</span> و <span class="abc">ب</span> و <span class="abc">ج</span> بنكتبه:</p>
+  <div class="eq">
+    <span class="tag">المتجه</span>
+    <span class="vec">د</span> = ( <span class="abc">أ</span> ، <span class="abc">ب</span> ، <span class="abc">ج</span> )
   </div>
 
-  <div id="joy"><div class="knob"></div></div>
+  <h3>ثالثًا: القوانين الأساسية للمتجهات (لازم تحفظها)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>المفهوم</th><th>القانون</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>طول المتجه</strong></td>
+          <td>
+            | <span class="vec">د</span> | =
+            <span style="font-family:'Amiri',serif">√( <span class="abc">أ</span>² + <span class="abc">ب</span>² + <span class="abc">ج</span>² )</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>الضرب القياسي</strong></td>
+          <td>
+            <span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> =
+            <span class="abc">أ</span><sub>1</sub><span class="abc">أ</span><sub>2</sub> +
+            <span class="abc">ب</span><sub>1</sub><span class="abc">ب</span><sub>2</sub> +
+            <span class="abc">ج</span><sub>1</sub><span class="abc">ج</span><sub>2</sub>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>المتجه من ا إلى ب</strong></td>
+          <td>
+            <span class="vec">ا ب</span> = ب − ا =
+            ( س<sub>2</sub>−س<sub>1</sub> ، ص<sub>2</sub>−ص<sub>1</sub> ، ع<sub>2</sub>−ع<sub>1</sub> )
+          </td>
+        </tr>
+        <tr>
+          <td><strong>شرط التوازي</strong></td>
+          <td>
+            <span class="vec">د</span><sub>1</sub> = <span class="par">ك</span> · <span class="vec">د</span><sub>2</sub>
+            &nbsp;⟺&nbsp;
+            <span class="frac"><span class="n"><span class="abc">أ</span><sub>1</sub></span><span class="d"><span class="abc">أ</span><sub>2</sub></span></span>
+            =
+            <span class="frac"><span class="n"><span class="abc">ب</span><sub>1</sub></span><span class="d"><span class="abc">ب</span><sub>2</sub></span></span>
+            =
+            <span class="frac"><span class="n"><span class="abc">ج</span><sub>1</sub></span><span class="d"><span class="abc">ج</span><sub>2</sub></span></span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>شرط التعامد</strong></td>
+          <td>
+            <span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> = 0
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-  <div id="right">
-    <div style="display:flex;gap:10px;align-items:center">
-      <div class="btn small" id="btn-switch">🔁</div>
-      <div class="btn block" id="btn-block">🛡️</div>
+  <div class="box note">
+    <div class="box-title">💡 فكرة مهمة</div>
+    <p>الخط المستقيم في الفراغ <strong>لا يُحدَّد بنقطة واحدة</strong>، وإنما يحتاج:</p>
+    <ul>
+      <li><strong>نقطة + متجه اتجاه</strong> &nbsp;(وهذا الأكثر استخدامًا)</li>
+      <li>أو <strong>نقطتين مختلفتين</strong> (ومنهم نستنتج متجه الاتجاه)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 2. المعادلات ================= -->
+<section id="equation">
+  <div class="sec-head">
+    <div class="sec-num">2</div>
+    <h2>الصور الثلاث لمعادلة الخط المستقيم في الفراغ</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <p>لو عندنا خط مستقيم <strong>ل</strong> مارّ بالنقطة <span class="sym">ا( س<sub>0</sub> ، ص<sub>0</sub> ، ع<sub>0</sub> )</span> ومتجه اتجاهه <span class="vec sym">د</span> = <span class="sym">( <span class="abc">أ</span> ، <span class="abc">ب</span> ، <span class="abc">ج</span> )</span>، فمعادلته تُكتب بثلاث صور متكافئة:</p>
+
+  <!-- الصورة الأولى -->
+  <h3>الصورة الأولى: الصورة المتجهة</h3>
+  <div class="eq">
+    <span class="tag">الصورة المتجهة</span>
+    <span class="vec">ر</span> = <span class="vec">ر</span><sub>0</sub> +
+    <span class="par">ك</span> · <span class="vec">د</span>
+  </div>
+  <p>حيث <span class="vec sym">ر</span> متجه موضع أي نقطة على الخط، و <span class="vec sym">ر</span><sub>0</sub> متجه موضع النقطة <span class="sym">ا</span>، و <span class="par">ك</span> عدد حقيقي (المعامل).</p>
+  <div class="eq amber">
+    <span class="tag">بالتفصيل</span>
+    ( س ، ص ، ع ) = ( س<sub>0</sub> ، ص<sub>0</sub> ، ع<sub>0</sub> ) +
+    <span class="par">ك</span> ( <span class="abc">أ</span> ، <span class="abc">ب</span> ، <span class="abc">ج</span> )
+  </div>
+
+  <!-- الصورة الثانية -->
+  <h3>الصورة الثانية: الصورة البارامترية</h3>
+  <p>بمساواة المركبات في الصورة المتجهة نحصل على <strong>ثلاث معادلات</strong>:</p>
+  <div class="eq green">
+    <span class="tag">البارامترية</span>
+    <span class="xyz">س</span> = س<sub>0</sub> + <span class="abc">أ</span> <span class="par">ك</span>
+    &nbsp;،&nbsp;
+    <span class="xyz">ص</span> = ص<sub>0</sub> + <span class="abc">ب</span> <span class="par">ك</span>
+    &nbsp;،&nbsp;
+    <span class="xyz">ع</span> = ع<sub>0</sub> + <span class="abc">ج</span> <span class="par">ك</span>
+  </div>
+
+  <!-- الصورة الثالثة -->
+  <h3>الصورة الثالثة: الصورة الكارتيزية (التماثلية)</h3>
+  <p>بحل كل معادلة بالنسبة لـ <span class="par">ك</span> ومساواتها ببعض:</p>
+  <div class="eq purple">
+    <span class="tag">الكارتيزية</span>
+    <span class="frac"><span class="n"><span class="xyz">س</span> − س<sub>0</sub></span><span class="d"><span class="abc">أ</span></span></span>
+    =
+    <span class="frac"><span class="n"><span class="xyz">ص</span> − ص<sub>0</sub></span><span class="d"><span class="abc">ب</span></span></span>
+    =
+    <span class="frac"><span class="n"><span class="xyz">ع</span> − ع<sub>0</sub></span><span class="d"><span class="abc">ج</span></span></span>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ تحذير مهم جدًا</div>
+    <p>لازم يكون <span class="abc">أ</span> و <span class="abc">ب</span> و <span class="abc">ج</span> <strong>لا تساوي كلها صفرًا</strong>، وإلا يبقى المتجه صفري ومش بيحدد اتجاه.</p>
+  </div>
+
+  <h3>التحويل بين الصور الثلاث</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>من</th><th>إلى</th><th>الطريقة</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>كارتيزية</td><td>بارامترية</td><td>ساوي كل كسر بـ <span class="par">ك</span> ثم افصل</td></tr>
+        <tr><td>بارامترية</td><td>كارتيزية</td><td>حل كل معادلة بالنسبة لـ <span class="par">ك</span> وساوِ</td></tr>
+        <tr><td>كارتيزية/بارامترية</td><td>متجهة</td><td>اجمع في صورة (نقطة) + <span class="par">ك</span>(متجه)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= 3. التريكات ================= -->
+<section id="tricks">
+  <div class="sec-head">
+    <div class="sec-num">3</div>
+    <h2>التريكات والحالات الخاصة (أهم جزء في الدرس)</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 1 — لما يكون في المقام صفر</div>
+    <p>لو <span class="abc">أ</span> = 0 (يعني متجه الاتجاه مركبته السينية صفر)، <strong>مش بنكتب كسر مقامه صفر</strong>! بنكتب:</p>
+    <div class="eq amber">
+      <span class="xyz">س</span> = س<sub>0</sub>
+      &nbsp;،&nbsp;
+      <span class="frac"><span class="n"><span class="xyz">ص</span> − ص<sub>0</sub></span><span class="d"><span class="abc">ب</span></span></span>
+      =
+      <span class="frac"><span class="n"><span class="xyz">ع</span> − ع<sub>0</sub></span><span class="d"><span class="abc">ج</span></span></span>
     </div>
-    <div class="btn fire" id="btn-fire">⚔️</div>
+    <p>وكذلك الحال لو <span class="abc">ب</span> = 0 → <span class="xyz">ص</span> = ص<sub>0</sub>، ولو <span class="abc">ج</span> = 0 → <span class="xyz">ع</span> = ع<sub>0</sub>.</p>
+    <p><strong>والمعنى الهندسي:</strong> الخط عمودي على المحور اللي مركبته صفر.</p>
   </div>
 
-  <div id="bottom">
-    <div class="bar"><div class="fill" id="hpFill" style="background:linear-gradient(90deg,#43aa8b,#7bc98f);width:100%"></div><div class="txt" id="hpTxt">❤️ 150/150</div></div>
-    <div class="bar" style="height:8px"><div class="fill" id="mpFill" style="background:linear-gradient(90deg,#4a90e2,#7fb3ff);width:100%"></div></div>
-  </div>
-
-  <div id="notif"></div>
-
-  <!-- INVENTORY 4x3 -->
-  <div class="panel" id="inv">
-    <button class="close-btn" onclick="closeInv()">×</button>
-    <h2>🎒 الحقيبة</h2>
-    <div class="panel-body"><div id="invGrid"></div></div>
-  </div>
-
-  <!-- SHOP 5 columns scrollable -->
-  <div class="panel" id="shop">
-    <button class="close-btn" onclick="closeShop()">×</button>
-    <h2>🛒 المتجر — 🪙 <span id="shopGold">0</span></h2>
-    <div class="tabs">
-      <div class="tab active" data-shop="weapons">⚔️ أسلحة</div>
-      <div class="tab" data-shop="armors">🛡️ دروع</div>
-      <div class="tab" data-shop="potions">🧪 جرعات</div>
-      <div class="tab" data-shop="sell">💰 بيع</div>
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 2 — الخط المار بنقطتين</div>
+    <p>لو معطى <span class="sym">ا(س<sub>1</sub> ، ص<sub>1</sub> ، ع<sub>1</sub>)</span> و <span class="sym">ب(س<sub>2</sub> ، ص<sub>2</sub> ، ع<sub>2</sub>)</span>:</p>
+    <div class="eq amber">
+      <span class="vec">د</span> = <span class="vec">ا ب</span> = ( س<sub>2</sub> − س<sub>1</sub> ، ص<sub>2</sub> − ص<sub>1</sub> ، ع<sub>2</sub> − ع<sub>1</sub> )
     </div>
-    <div class="panel-body"><div id="shopGrid"></div></div>
+    <p>ثم نعوّض في الصورة الكارتيزية بأي من النقطتين (النتيجة واحدة).</p>
   </div>
 
-  <!-- BOOK - recipes craftable -->
-  <div class="panel" id="book">
-    <button class="close-btn" onclick="closeBook()">×</button>
-    <h2>📖 كتيب المغامر — انقر للصناعة</h2>
-    <div class="tabs">
-      <div class="tab active" data-book="weapons">🗡️ أسلحة</div>
-      <div class="tab" data-book="armors">🛡️ دروع</div>
-      <div class="tab" data-book="potions">🧪 جرعات</div>
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 3 — متجه الاتجاه قابل للضرب</div>
+    <p>متجه الاتجاه ممكن نضربه أو نقسمه على أي عدد <strong>غير صفري</strong> والمعادلة تفضل صحيحة.</p>
+    <div class="eq amber">
+      <span class="frac"><span class="n"><span class="xyz">س</span> − 1</span><span class="d">2</span></span>
+      =
+      <span class="frac"><span class="n"><span class="xyz">ص</span> − 3</span><span class="d">4</span></span>
+      &nbsp;⟺&nbsp;
+      <span class="frac"><span class="n"><span class="xyz">س</span> − 1</span><span class="d">1</span></span>
+      =
+      <span class="frac"><span class="n"><span class="xyz">ص</span> − 3</span><span class="d">2</span></span>
     </div>
-    <div class="panel-body"><div id="bookContent"></div></div>
+    <p>ودي بتساعدك توحّد المقامات أو تتخلص من الإشارات السالبة.</p>
   </div>
-</div>
 
-<div id="start">
-  <div class="sun">🌅</div>
-  <h1>رحلة ما بعد الظلام</h1>
-  <p>«بعد كل ظلام... يأتي الفجر.»</p>
-  <button class="tbtn gold" onclick="startGame('yousef')">🧑 العب بيوسف</button>
-  <button class="tbtn" onclick="startGame('timi')">👩 العب بتيمي</button>
-  <div style="color:#888;font-size:11px;margin-top:8px;max-width:420px;line-height:1.6">
-    🎮 جويستيك يسار • اسحب يمين للكاميرا<br>
-    ⚔️ هجوم • 🛡️ صد • 🛒 متجر • 📖 كتيب • 🎒 حقيبة<br>
-    📜 قائمة المهام ثابتة على اليسار — تُحدّث تلقائيًا
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 4 — التخلص من المقامات السالبة</div>
+    <p>لو المقام سالب، اضرب البسط والمقام في (−1) للتبسيط:</p>
+    <div class="eq amber">
+      <span class="frac"><span class="n"><span class="xyz">ع</span> − 3</span><span class="d">−2</span></span>
+      &nbsp;=&nbsp;
+      <span class="frac"><span class="n">3 − <span class="xyz">ع</span></span><span class="d">2</span></span>
+    </div>
+    <p>خد بالك: <strong>البسط بس اللي بيتغير</strong>، لأن إشارة المقام بتطلع بره كـ (−1).</p>
   </div>
-</div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 5 — الخطوط الموازية للمحاور</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>الخط موازي لـ</th><th>متجه الاتجاه</th><th>شكل المعادلة</th></tr></thead>
+        <tbody>
+          <tr><td>المحور السيني (س)</td><td>(1 ، 0 ، 0)</td><td>ص = ص<sub>0</sub> ، ع = ع<sub>0</sub></td></tr>
+          <tr><td>المحور الصادي (ص)</td><td>(0 ، 1 ، 0)</td><td>س = س<sub>0</sub> ، ع = ع<sub>0</sub></td></tr>
+          <tr><td>المحور العيني (ع)</td><td>(0 ، 0 ، 1)</td><td>س = س<sub>0</sub> ، ص = ص<sub>0</sub></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>خد بالك:</strong> متجه الاتجاه بيبقى (0 ، 0 ، 1) معناه موازي لمحور العينات، يعني الإحداثيين س و ص ثابتين.</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 6 — إيجاد متجه اتجاه عمودي على متجهين</div>
+    <p>لو مطلوب خط <strong>عمودي على خطين</strong> في نفس الوقت، متجه اتجاهه = <strong>حاصل الضرب الاتجاهي</strong> للمتجهين:</p>
+    <div class="eq amber">
+      <span class="vec">د</span> = <span class="vec">د</span><sub>1</sub> × <span class="vec">د</span><sub>2</sub>
+    </div>
+    <p>وهذا التريك بيتكرر كتير في الامتحانات.</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 7 — التحقق أن نقطة تقع على الخط</div>
+    <p>عوّض بإحداثيات النقطة في الصورة الكارتيزية، لازم <strong>القيم الثلاثة تتساوى</strong>.</p>
+    <p>ولو واحدة منهم اختلفت → النقطة <strong>لا تقع</strong> على الخط.</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 8 — استنتاج نقطة من الصورة الكارتيزية</div>
+    <p>في الصورة <span style="font-family:'Amiri',serif">(س−س<sub>0</sub>)/أ = (ص−ص<sub>0</sub>)/ب = (ع−ع<sub>0</sub>)/ج</span>:</p>
+    <ul>
+      <li><strong>النقطة:</strong> خد الأعداد المطروحة من س، ص، ع <strong>بإشارتها المعاكسة</strong> → (س<sub>0</sub> ، ص<sub>0</sub> ، ع<sub>0</sub>)</li>
+      <li><strong>متجه الاتجاه:</strong> خد المقامات كما هي → (أ ، ب ، ج)</li>
+    </ul>
+    <p>يعني من <span style="font-family:'Amiri',serif">(س−2)/3 = (ص+1)/5 = (ع−4)/(−2)</span> نستنتج فورًا: النقطة (2 ، −1 ، 4) والاتجاه (3 ، 5 ، −2).</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك 9 — الخط الواقع في مستوى إحداثي</div>
+    <p>لو الخط واقع في مستوى <strong>س ص</strong> (مستوى الإحداثيات) فإن كل نقطة عليه <span class="xyz">ع</span> = 0 → يعني <span class="abc">ج</span> = 0 والنقطة ع<sub>0</sub> = 0.</p>
+  </div>
+
+  <div class="box ok">
+    <div class="box-title">✅ خلاصة سريعة للتريكات</div>
+    <ul>
+      <li>مقام = 0 → اكتب المتغير يساوي الثابت (مش كسر).</li>
+      <li>نقطتين → اطرحهم تجيب متجه الاتجاه.</li>
+      <li>عمودي على متجهين → اضربهم اتجاهيًا.</li>
+      <li>تحقق من نقطة → عوّض وشوف القيم الثلاثة.</li>
+      <li>مقام سالب → اضرب البسط والمقام في (−1).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 4. الوضع النسبي ================= -->
+<section id="relative">
+  <div class="sec-head">
+    <div class="sec-num">4</div>
+    <h2>الوضع النسبي بين خطين مستقيمين في الفراغ</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <p>عندنا خطان <span class="sym">ل<sub>1</sub></span> متجه اتجاهه <span class="vec">د</span><sub>1</sub> ويمر بـ <span class="sym">ا<sub>1</sub></span>، و <span class="sym">ل<sub>2</sub></span> متجه اتجاهه <span class="vec">د</span><sub>2</sub> ويمر بـ <span class="sym">ا<sub>2</sub></span>.</p>
+
+  <div class="grid">
+    <div class="card c1">
+      <h4>① متوازيان</h4>
+      <p><span class="vec">د</span><sub>1</sub> = <span class="par">ك</span> <span class="vec">د</span><sub>2</sub></p>
+      <p style="margin-top:6px">وإذا كانت نقطة من أحدهما تحقق الآخر → <strong>منطبقان</strong>.</p>
+    </div>
+    <div class="card c2">
+      <h4>② متقاطعان</h4>
+      <p>يوجد حل مشترك للمعادلات الثلاث، ويكونان في <strong>مستوى واحد</strong>.</p>
+    </div>
+    <div class="card c3">
+      <h4>③ متخالفان</h4>
+      <p>ليسا متوازيين ولا متقاطعان → لا يوجد مستوى واحد يجمعهما.</p>
+    </div>
+    <div class="card c4">
+      <h4>④ متعامدان</h4>
+      <p><span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> = 0</p>
+      <p style="margin-top:6px">ممكن يكونا متقاطعين أو متخالفين.</p>
+    </div>
+  </div>
+
+  <div class="box note">
+    <div class="box-title">🔍 خطوات تحديد الوضع النسبي</div>
+    <ol>
+      <li>اكتب متجه اتجاه كل خط.</li>
+      <li>اختبر <strong>التوازي</strong>: هل <span class="vec">د</span><sub>1</sub> = <span class="par">ك</span> <span class="vec">د</span><sub>2</sub>؟</li>
+      <li>لو متوازيين → جرب نقطة من الخط الأول في الثاني. لو حققتها → منطبقان، وإلا → متوازيان ومختلفان.</li>
+      <li>لو مش متوازيين → حل معادلتين معًا، وجرّب الناتج في الثالثة:
+        <ul>
+          <li>لو حققها → <strong>متقاطعان</strong> (وبتجيب نقطة التقاطع).</li>
+          <li>لو ما حققهاش → <strong>متخالفان</strong>.</li>
+        </ul>
+      </li>
+      <li>واختبر <strong>التعامد</strong> منفصلًا بـ <span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> = 0.</li>
+    </ol>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ غلطة شائعة</div>
+    <p>كثير من الطلبة بيفتكروا إن <span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> ≠ 0 معناه إنهم مش متعامدين بس، وينسوا إنهم ممكن يكونوا <strong>متقاطعين أو متخالفين</strong>. التعامد شرط مستقل تمامًا عن التقاطع.</p>
+  </div>
+</section>
+
+<!-- ================= 5. الزاوية والمسافة ================= -->
+<section id="angle">
+  <div class="sec-head">
+    <div class="sec-num">5</div>
+    <h2>الزاوية بين خطين · المسافة من نقطة إلى خط · التقاطع مع مستوى</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <h3>أولًا: قياس الزاوية بين خطين</h3>
+  <p>الزاوية بين خطين هي الزاوية بين <strong>متجهي الاتجاه</strong>، وبنأخذ القيمة المطلقة عشان الزاوية تكون حادة أو قائمة:</p>
+  <div class="eq">
+    <span class="tag">الزاوية</span>
+    جتا <span class="par">هـ</span> =
+    <span class="frac">
+      <span class="n">|<span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub>|</span>
+      <span class="d">|<span class="vec">د</span><sub>1</sub>| · |<span class="vec">د</span><sub>2</sub>|</span>
+    </span>
+  </div>
+  <div class="eq green">
+    <span class="tag">بالتفصيل</span>
+    جتا <span class="par">هـ</span> =
+    <span class="frac">
+      <span class="n">| <span class="abc">أ</span><sub>1</sub><span class="abc">أ</span><sub>2</sub> + <span class="abc">ب</span><sub>1</sub><span class="abc">ب</span><sub>2</sub> + <span class="abc">ج</span><sub>1</sub><span class="abc">ج</span><sub>2</sub> |</span>
+      <span class="d">√(<span class="abc">أ</span><sub>1</sub>²+<span class="abc">ب</span><sub>1</sub>²+<span class="abc">ج</span><sub>1</sub>²) · √(<span class="abc">أ</span><sub>2</sub>²+<span class="abc">ب</span><sub>2</sub>²+<span class="abc">ج</span><sub>2</sub>²)</span>
+    </span>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك الزاوية</div>
+    <ul>
+      <li>لو <strong>جتا هـ = 0</strong> → الزاوية 90° → الخطان متعامدان.</li>
+      <li>لو <strong>جتا هـ = 1</strong> → الزاوية صفر → الخطان متوازيان (أو منطبقان).</li>
+      <li>لو <strong>جتا هـ = −1</strong> → برضه متوازيان (بس متعاكسان في الاتجاه).</li>
+    </ul>
+  </div>
+
+  <h3>ثانيًا: المسافة من نقطة إلى خط مستقيم</h3>
+  <p>المسافة من النقطة <span class="sym">ج</span> إلى الخط المار بـ <span class="sym">ا</span> ومتجه اتجاهه <span class="vec">د</span>:</p>
+  <div class="eq purple">
+    <span class="tag">المسافة</span>
+    ف =
+    <span class="frac">
+      <span class="n">|<span class="vec">د</span> × <span class="vec">ا ج</span>|</span>
+      <span class="d">|<span class="vec">د</span>|</span>
+    </span>
+  </div>
+
+  <div class="box note">
+    <div class="box-title">📌 خطوات الحل</div>
+    <ol>
+      <li>حدّد نقطة <span class="sym">ا</span> على الخط (من معادلته).</li>
+      <li>كوّن المتجه <span class="vec">ا ج</span> = ج − ا.</li>
+      <li>احسب حاصل الضرب الاتجاهي <span class="vec">د</span> × <span class="vec">ا ج</span>.</li>
+      <li>احسب الطول |<span class="vec">د</span> × <span class="vec">ا ج</span>| و |<span class="vec">د</span>|.</li>
+      <li>اقسم.</li>
+    </ol>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">🎯 تريك المسافة — طريقة بديلة</div>
+    <p>ممكن تستخدم القانون: <span style="font-family:'Amiri',serif">ف = |<span class="vec">ا ج</span>| جا <span class="par">هـ</span></span> حيث <span class="par">هـ</span> الزاوية بين <span class="vec">ا ج</span> و <span class="vec">د</span>. ولو مش عارف الزاوية، ارجع للطريقة الأولى.</p>
+  </div>
+
+  <h3>ثالثًا: تقاطع خط مستقيم مع مستوى</h3>
+  <p>لو المستوى معادلته: <span style="font-family:'Amiri',serif"><span class="abc">أ</span><sub>1</sub><span class="xyz">س</span> + <span class="abc">ب</span><sub>1</sub><span class="xyz">ص</span> + <span class="abc">ج</span><sub>1</sub><span class="xyz">ع</span> = د</span>:</p>
+  <ol>
+    <li>اكتب الخط بالصورة البارامترية بدلالة <span class="par">ك</span>.</li>
+    <li>عوّض في معادلة المستوى.</li>
+    <li>حل المعادلة الناتجة لإيجاد <span class="par">ك</span>.</li>
+    <li>عوّض بقيمة <span class="par">ك</span> في المعادلات البارامترية → نقطة التقاطع.</li>
+  </ol>
+  <div class="box warn">
+    <div class="box-title">⚠️ حالات خاصة</div>
+    <ul>
+      <li>لو المعادلة الناتجة <strong>لها حل وحيد</strong> → الخط يقطع المستوى في نقطة.</li>
+      <li>لو الناتج <strong>0 = 0</strong> → الخط <strong>واقع في المستوى</strong>.</li>
+      <li>لو الناتج <strong>0 = عدد ≠ 0</strong> → الخط <strong>موازٍ للمستوى</strong> ولا يقطعه.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 6. أمثلة ================= -->
+<section id="examples">
+  <div class="sec-head">
+    <div class="sec-num">6</div>
+    <h2>أمثلة محلولة خطوة بخطوة</h2>
+  </div>
+  <div class="sec-line"></div>
+  <p>اضغط على عنوان أي مثال لعرض الحل بالتفصيل.</p>
+
+  <!-- مثال 1 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">1</div>
+      <h4>اكتب معادلة الخط المستقيم المار بالنقطة ا(2 ، −1 ، 3) ومتجه اتجاهه د = (4 ، 5 ، −2) بالصور الثلاث.</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p><strong>الصورة الكارتيزية:</strong> نعوّض مباشرة في القانون.</p>
+        <div class="eq purple">
+          <span class="frac"><span class="n"><span class="xyz">س</span> − 2</span><span class="d">4</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ص</span> + 1</span><span class="d">5</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ع</span> − 3</span><span class="d">−2</span></span>
+        </div>
+        <p style="color:#b45309;font-size:.9rem">لاحظ: ص − (−1) = ص + 1</p>
+      </div></div>
+
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p><strong>الصورة البارامترية:</strong> نساوي كل كسر بـ <span class="par">ك</span>.</p>
+        <div class="eq green">
+          <span class="xyz">س</span> = 2 + 4<span class="par">ك</span>
+          &nbsp;،&nbsp;
+          <span class="xyz">ص</span> = −1 + 5<span class="par">ك</span>
+          &nbsp;،&nbsp;
+          <span class="xyz">ع</span> = 3 − 2<span class="par">ك</span>
+        </div>
+      </div></div>
+
+      <div class="step"><div class="step-n">3</div><div class="step-c">
+        <p><strong>الصورة المتجهة:</strong></p>
+        <div class="eq">
+          <span class="vec">ر</span> = ( 2 ، −1 ، 3 ) + <span class="par">ك</span> ( 4 ، 5 ، −2 )
+        </div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- مثال 2 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">2</div>
+      <h4>أوجد معادلة الخط المستقيم المار بالنقطتين ا(1 ، 2 ، 3) و ب(4 ، 0 ، 5).</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p><strong>نوجد متجه الاتجاه</strong> = المتجه من ا إلى ب:</p>
+        <div class="eq amber">
+          <span class="vec">د</span> = <span class="vec">ا ب</span> = (4−1 ، 0−2 ، 5−3) = (3 ، −2 ، 2)
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p><strong>نعوّض</strong> بالنقطة ا (أو ب — النتيجة نفسها):</p>
+        <div class="eq purple">
+          <span class="frac"><span class="n"><span class="xyz">س</span> − 1</span><span class="d">3</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ص</span> − 2</span><span class="d">−2</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ع</span> − 3</span><span class="d">2</span></span>
+        </div>
+      </div></div>
+      <div class="box ok">
+        <div class="box-title">✔️ تحقق سريع</div>
+        <p>عوّض بالنقطة ب(4 ، 0 ، 5): (4−1)/3 = 1 ، (0−2)/(−2) = 1 ، (5−3)/2 = 1 ✓ القيم الثلاثة متساوية، إذن ب تقع على الخط.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 3 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">3</div>
+      <h4>أوجد معادلة الخط المار بالنقطة ا(2 ، 3 ، 1) ومتجه اتجاهه د = (0 ، 4 ، −5).</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="box warn">
+        <div class="box-title">⚠️ لاحظ</div>
+        <p>المركبة السينية <span class="abc">أ</span> = 0، فلا نكتب كسرًا مقامه صفر.</p>
+      </div>
+      <div class="eq amber">
+        <span class="xyz">س</span> = 2
+        &nbsp;،&nbsp;
+        <span class="frac"><span class="n"><span class="xyz">ص</span> − 3</span><span class="d">4</span></span>
+        =
+        <span class="frac"><span class="n"><span class="xyz">ع</span> − 1</span><span class="d">−5</span></span>
+      </div>
+      <p><strong>المعنى الهندسي:</strong> الخط ده عمودي على المحور السيني (لأن مركبته السينية صفر)، يعني بيقطع المستوى ص ع في خط موازي له.</p>
+      <h4>وبالصورة البارامترية:</h4>
+      <div class="eq green">
+        <span class="xyz">س</span> = 2
+        &nbsp;،&nbsp;
+        <span class="xyz">ص</span> = 3 + 4<span class="par">ك</span>
+        &nbsp;،&nbsp;
+        <span class="xyz">ع</span> = 1 − 5<span class="par">ك</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 4 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">4</div>
+      <h4>هل تقع النقطة ج(5 ، 4 ، 1) على الخط ل: (س−1)/2 = (ص−2)/1 = (ع−3)/(−2) ؟</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p>نعوّض بإحداثيات ج في كل كسر:</p>
+        <div class="eq amber">
+          <span class="frac"><span class="n">5 − 1</span><span class="d">2</span></span> = 2
+          &nbsp;،&nbsp;
+          <span class="frac"><span class="n">4 − 2</span><span class="d">1</span></span> = 2
+          &nbsp;،&nbsp;
+          <span class="frac"><span class="n">1 − 3</span><span class="d">−2</span></span> = 1
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p>القيم: 2 ، 2 ، 1 — <strong>مش متساوية</strong>.</p>
+      </div></div>
+      <div class="box warn">
+        <div class="box-title">❌ النتيجة</div>
+        <p>النقطة ج <strong>لا تقع</strong> على الخط ل، لأن الكسر الثالث أعطى قيمة مختلفة.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 5 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">5</div>
+      <h4>حدّد الوضع النسبي بين الخطين:</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="eq">
+        ل<sub>1</sub> :
+        <span class="frac"><span class="n"><span class="xyz">س</span> − 1</span><span class="d">2</span></span>
+        =
+        <span class="frac"><span class="n"><span class="xyz">ص</span> + 1</span><span class="d">3</span></span>
+        =
+        <span class="frac"><span class="n"><span class="xyz">ع</span> − 2</span><span class="d">1</span></span>
+      </div>
+      <div class="eq">
+        ل<sub>2</sub> :
+        <span class="frac"><span class="n"><span class="xyz">س</span> − 3</span><span class="d">4</span></span>
+        =
+        <span class="frac"><span class="n"><span class="xyz">ص</span> − 2</span><span class="d">6</span></span>
+        =
+        <span class="frac"><span class="n"><span class="xyz">ع</span> − 1</span><span class="d">2</span></span>
+      </div>
+
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p>متجها الاتجاه: <span class="vec">د</span><sub>1</sub> = (2 ، 3 ، 1) ، <span class="vec">د</span><sub>2</sub> = (4 ، 6 ، 2)</p>
+        <p>نلاحظ: <span class="vec">د</span><sub>2</sub> = 2 × <span class="vec">د</span><sub>1</sub> → <strong>متوازيان</strong>.</p>
+      </div></div>
+
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p>هل منطبقان؟ نجرّب نقطة من ل<sub>1</sub> وهي (1 ، −1 ، 2) في معادلة ل<sub>2</sub>:</p>
+        <div class="eq amber">
+          <span class="frac"><span class="n">1 − 3</span><span class="d">4</span></span> =
+          <span class="frac"><span class="n">−2</span><span class="d">4</span></span> = −0.5
+          &nbsp;≠&nbsp;
+          <span class="frac"><span class="n">−1 − 2</span><span class="d">6</span></span> = −0.5
+          &nbsp;≠&nbsp;
+          <span class="frac"><span class="n">2 − 1</span><span class="d">2</span></span> = 0.5
+        </div>
+        <p>القيم غير متساوية → النقطة لا تقع على ل<sub>2</sub>.</p>
+      </div></div>
+
+      <div class="box ok">
+        <div class="box-title">✅ النتيجة النهائية</div>
+        <p>الخطان <strong>متوازيان ومختلفان</strong> (ليسا منطبقين)، لأنهما متوازيان ولكن لا يشتركان في نقطة.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 6 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">6</div>
+      <h4>أوجد قياس الزاوية بين الخطين اللذين متجها اتجاههما د₁ = (1 ، 2 ، 2) و د₂ = (2 ، −1 ، 2).</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p><strong>الضرب القياسي:</strong></p>
+        <div class="eq amber">
+          <span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> = (1)(2) + (2)(−1) + (2)(2) = 2 − 2 + 4 = 4
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p><strong>الأطوال:</strong></p>
+        <div class="eq amber">
+          |<span class="vec">د</span><sub>1</sub>| = √(1+4+4) = √9 = 3
+          &nbsp;،&nbsp;
+          |<span class="vec">د</span><sub>2</sub>| = √(4+1+4) = √9 = 3
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-c">
+        <p><strong>قانون الزاوية:</strong></p>
+        <div class="eq green">
+          جتا <span class="par">هـ</span> =
+          <span class="frac"><span class="n">|4|</span><span class="d">3 × 3</span></span>
+          =
+          <span class="frac"><span class="n">4</span><span class="d">9</span></span>
+        </div>
+      </div></div>
+      <div class="box ok">
+        <div class="box-title">✅ النتيجة</div>
+        <p><span class="par">هـ</span> = جتا<sup>−1</sup>(4/9) ≈ 63° 37′ تقريبًا.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 7 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">7</div>
+      <h4>أوجد المسافة من النقطة ج(2 ، 3 ، 4) إلى الخط المار بالنقطة ا(1 ، 0 ، 2) ومتجه اتجاهه د = (2 ، 1 ، −1).</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p><strong>المتجه ا ج:</strong></p>
+        <div class="eq amber">
+          <span class="vec">ا ج</span> = (2−1 ، 3−0 ، 4−2) = (1 ، 3 ، 2)
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p><strong>حاصل الضرب الاتجاهي</strong> <span class="vec">د</span> × <span class="vec">ا ج</span>:</p>
+        <div class="eq amber">
+          = ( (1)(2) − (−1)(3) ، (−1)(1) − (2)(2) ، (2)(3) − (1)(1) )
+          <br>
+          = ( 2 + 3 ، −1 − 4 ، 6 − 1 ) = ( 5 ، −5 ، 5 )
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-c">
+        <p><strong>الأطوال:</strong></p>
+        <div class="eq amber">
+          |<span class="vec">د</span> × <span class="vec">ا ج</span>| = √(25+25+25) = √75 = 5√3
+          &nbsp;،&nbsp;
+          |<span class="vec">د</span>| = √(4+1+1) = √6
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">4</div><div class="step-c">
+        <p><strong>المسافة:</strong></p>
+        <div class="eq green">
+          ف =
+          <span class="frac"><span class="n">5√3</span><span class="d">√6</span></span>
+          =
+          <span class="frac"><span class="n">5</span><span class="d">√2</span></span>
+          =
+          <span class="frac"><span class="n">5√2</span><span class="d">2</span></span>
+          ≈ 3.54
+        </div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- مثال 8 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">8</div>
+      <h4>أوجد نقطة تقاطع الخط: س = 1 + 2ك ، ص = 2 − ك ، ع = 3 + ك &nbsp;مع المستوى: 2س + ص − ع = 5.</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p>الخط معطى أصلًا بالصورة البارامترية، نعوّض في معادلة المستوى:</p>
+        <div class="eq amber">
+          2(1 + 2<span class="par">ك</span>) + (2 − <span class="par">ك</span>) − (3 + <span class="par">ك</span>) = 5
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p>نفك الأقواس ونجمع:</p>
+        <div class="eq amber">
+          2 + 4<span class="par">ك</span> + 2 − <span class="par">ك</span> − 3 − <span class="par">ك</span> = 5
+          <br>
+          1 + 2<span class="par">ك</span> = 5
+          &nbsp;⟹&nbsp;
+          2<span class="par">ك</span> = 4
+          &nbsp;⟹&nbsp;
+          <span class="par">ك</span> = 2
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-c">
+        <p>نعوّض بقيمة <span class="par">ك</span> في المعادلات البارامترية:</p>
+        <div class="eq green">
+          <span class="xyz">س</span> = 1 + 2(2) = 5
+          &nbsp;،&nbsp;
+          <span class="xyz">ص</span> = 2 − 2 = 0
+          &nbsp;،&nbsp;
+          <span class="xyz">ع</span> = 3 + 2 = 5
+        </div>
+      </div></div>
+      <div class="box ok">
+        <div class="box-title">✅ نقطة التقاطع</div>
+        <p>( 5 ، 0 ، 5 )</p>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- مثال 9 -->
+  <div class="example">
+    <div class="ex-head">
+      <div class="ex-num">9</div>
+      <h4>أوجد معادلة الخط المستقيم المار بالنقطة ا(1 ، 2 ، 3) والعمودي على الخطين:</h4>
+      <span class="ex-toggle">▾</span>
+    </div>
+    <div class="ex-body"><div class="ex-inner">
+      <div class="eq">
+        ل<sub>1</sub> : <span class="vec">د</span><sub>1</sub> = (1 ، 2 ، 1)
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        ل<sub>2</sub> : <span class="vec">د</span><sub>2</sub> = (2 ، −1 ، 3)
+      </div>
+      <div class="step"><div class="step-n">1</div><div class="step-c">
+        <p>بما أن الخط المطلوب عمودي على الخطين، فإن متجه اتجاهه = حاصل الضرب الاتجاهي:</p>
+        <div class="eq amber">
+          <span class="vec">د</span> = <span class="vec">د</span><sub>1</sub> × <span class="vec">د</span><sub>2</sub>
+          = ( (2)(3) − (1)(−1) ، (1)(2) − (1)(3) ، (1)(−1) − (2)(2) )
+        </div>
+        <div class="eq amber">
+          = ( 6 + 1 ، 2 − 3 ، −1 − 4 ) = ( 7 ، −1 ، −5 )
+        </div>
+      </div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-c">
+        <p>نكتب المعادلة:</p>
+        <div class="eq purple">
+          <span class="frac"><span class="n"><span class="xyz">س</span> − 1</span><span class="d">7</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ص</span> − 2</span><span class="d">−1</span></span>
+          =
+          <span class="frac"><span class="n"><span class="xyz">ع</span> − 3</span><span class="d">−5</span></span>
+        </div>
+      </div></div>
+      <div class="box ok">
+        <div class="box-title">✔️ تحقق</div>
+        <p>(7 ، −1 ، −5) · (1 ، 2 ، 1) = 7 − 2 − 5 = 0 ✓</p>
+        <p>(7 ، −1 ، −5) · (2 ، −1 ، 3) = 14 + 1 − 15 = 0 ✓</p>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= 7. اختبر نفسك ================= -->
+<section id="quiz">
+  <div class="sec-head">
+    <div class="sec-num">7</div>
+    <h2>اختبر نفسك — 6 أسئلة سريعة</h2>
+  </div>
+  <div class="sec-line"></div>
+  <p>اختر الإجابة الصحيحة وشوف النتيجة فورًا.</p>
+
+  <div id="quiz-box">
+    <!-- الأسئلة تُبنى بالجافاسكربت -->
+  </div>
+
+  <div class="score" id="score-box"></div>
+</section>
+
+<!-- ================= 8. الملخص ================= -->
+<section id="summary">
+  <div class="sec-head">
+    <div class="sec-num">8</div>
+    <h2>ملخص القوانين — صفحة واحدة</h2>
+  </div>
+  <div class="sec-line"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>المطلوب</th><th>القانون</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>الصورة الكارتيزية</td>
+          <td>
+            <span class="frac"><span class="n"><span class="xyz">س</span>−س<sub>0</sub></span><span class="d"><span class="abc">أ</span></span></span> =
+            <span class="frac"><span class="n"><span class="xyz">ص</span>−ص<sub>0</sub></span><span class="d"><span class="abc">ب</span></span></span> =
+            <span class="frac"><span class="n"><span class="xyz">ع</span>−ع<sub>0</sub></span><span class="d"><span class="abc">ج</span></span></span>
+          </td>
+        </tr>
+        <tr>
+          <td>الصورة البارامترية</td>
+          <td>س = س<sub>0</sub>+<span class="abc">أ</span><span class="par">ك</span> ، ص = ص<sub>0</sub>+<span class="abc">ب</span><span class="par">ك</span> ، ع = ع<sub>0</sub>+<span class="abc">ج</span><span class="par">ك</span></td>
+        </tr>
+        <tr>
+          <td>الصورة المتجهة</td>
+          <td><span class="vec">ر</span> = <span class="vec">ر</span><sub>0</sub> + <span class="par">ك</span><span class="vec">د</span></td>
+        </tr>
+        <tr>
+          <td>متجه الاتجاه من نقطتين</td>
+          <td><span class="vec">د</span> = ب − ا</td>
+        </tr>
+        <tr>
+          <td>شرط التوازي</td>
+          <td><span class="vec">د</span><sub>1</sub> = <span class="par">ك</span><span class="vec">د</span><sub>2</sub> &nbsp;(المقامات متناسبة)</td>
+        </tr>
+        <tr>
+          <td>شرط التعامد</td>
+          <td><span class="vec">د</span><sub>1</sub> · <span class="vec">د</span><sub>2</sub> = 0</td>
+        </tr>
+        <tr>
+          <td>الزاوية بين خطين</td>
+          <td>
+            جتا <span class="par">هـ</span> =
+            |<span class="vec">د</span><sub>1</sub>·<span class="vec">د</span><sub>2</sub>| ÷ (|<span class="vec">د</span><sub>1</sub>||<span class="vec">د</span><sub>2</sub>|)
+          </td>
+        </tr>
+        <tr>
+          <td>المسافة من نقطة إلى خط</td>
+          <td>
+            ف = |<span class="vec">د</span> × <span class="vec">ا ج</span>| ÷ |<span class="vec">د</span>|
+          </td>
+        </tr>
+        <tr>
+          <td>خط عمودي على خطين</td>
+          <td><span class="vec">د</span> = <span class="vec">د</span><sub>1</sub> × <span class="vec">د</span><sub>2</sub></td>
+        </tr>
+        <tr>
+          <td>تقاطع خط مع مستوى</td>
+          <td>عوّض بالبارامترية ← أوجد <span class="par">ك</span> ← عوّض</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box ok">
+    <div class="box-title">🏁 نصيحة أخيرة قبل الامتحان</div>
+    <ol>
+      <li>اقرأ السؤال وحدّد: <strong>نقطة + متجه اتجاه</strong> ولا <strong>نقطتين</strong> ولا <strong>عمودي على متجهين</strong>.</li>
+      <li>لو في مقام صفر، اكتب المتغير = الثابت، ولا تكتب كسرًا أبدًا.</li>
+      <li>في أسئلة الوضع النسبي، ابدأ دائمًا باختبار <strong>التوازي</strong> الأول.</li>
+      <li>في المسافة، اتأكد إنك حسبت <strong>حاصل الضرب الاتجاهي صح</strong> — دي أكتر نقطة بيغلطوا فيها.</li>
+      <li>راجع إشارات السالب في البسط: <span style="font-family:'Amiri',serif">ص − (−1) = ص + 1</span>.</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <strong>معادلات الخط المستقيم في الفراغ</strong>
+  هندسة فراغية · الوحدة الثانية · الدرس الأول · الصف الثالث الثانوي
+  <div style="margin-top:14px;font-size:.82rem;opacity:.75">بالتوفيق والنجاح 🌟</div>
+</footer>
+
+<button id="top-btn" title="العودة للأعلى">↑</button>
 
 <script>
-'use strict';
+/* ===== شريط التقدم ===== */
+const progress = document.getElementById('progress');
+const topBtn = document.getElementById('top-btn');
 
-var canvas = document.getElementById('game');
-var ctx = canvas.getContext('2d');
-var W = 0, H = 0;
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const p = (window.scrollY / h) * 100;
+  progress.style.width = p + '%';
+  topBtn.classList.toggle('show', window.scrollY > 500);
+});
 
-function resizeCanvas(){
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W;
-  canvas.height = H;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  checkRot();
-}
-window.addEventListener('resize', resizeCanvas);
-window.addEventListener('orientationchange', function(){ setTimeout(resizeCanvas, 200); });
-function checkRot(){
-  var rot = document.getElementById('rot');
-  if(window.innerHeight > window.innerWidth && window.innerWidth < 800) rot.classList.add('on');
-  else rot.classList.remove('on');
-}
+topBtn.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
-// ============ الحالة ============
-var G = {
-  running:false, paused:false, time:0,
-  stage:1, world:1,
-  player:{ x:0, y:0, hp:150, hpMax:150, mp:80, mpMax:80, level:1, xp:0, xpNext:100,
-    gold:300, atk:20, def:8, dir:'down', anim:0, attackAnim:0, blockAnim:0, hurtAnim:0, invuln:0, kills:0 },
-  enemies:[], arrows:[], particles:[], herbs:[], drops:[], dmgNums:[],
-  buildings:[], trees:[], rocks:[],
-  cam:{ x:0, y:0 },
-  input:{ f:0, r:0, attack:false, block:false },
-  joy:{ jx:0, jy:0, active:false },
-  inventory:{},
-  currentWeapon:'iron_sword',
-  ownedWeapons:['iron_sword','wood_bow','training_dagger'],
-  ownedArmors:['adv_armor'],
-  arrowsCount:30,
-  arrowRegenTimer:0,
-  enemiesTotal:0,
-  currentShopTab:'weapons',
-  currentBookTab:'weapons',
-  stats:{ crafted:0, kills:0 }
-};
+/* ===== تفعيل رابط التنقل الحالي ===== */
+const navLinks = [...document.querySelectorAll('.nav-inner a')];
+const sections = [...document.querySelectorAll('section[id]')];
 
-// ============ الأسلحة ============
-var WEAPONS = {
-  iron_sword:{ name:'سيف حديدي', icon:'⚔️', type:'sword', damage:30, range:80, arc:1.7, speed:0.35, rarity:'common', price:0, sellPrice:50,
-    recipe:{ iron:6, wood:2, leather:1 } },
-  fire_sword:{ name:'سيف النار', icon:'🔥', type:'sword', damage:50, range:85, arc:1.8, speed:0.32, rarity:'rare', price:500, sellPrice:250,
-    recipe:{ iron_sword:1, redCrystal:2, volcanicOre:3 } },
-  ice_sword:{ name:'سيف الجليد', icon:'❄️', type:'sword', damage:55, range:85, arc:1.8, speed:0.36, rarity:'rare', price:600, sellPrice:300,
-    recipe:{ iron_sword:1, iceCrystal:3, iceOre:4 } },
-  royal_sword:{ name:'السيف الملكي', icon:'👑', type:'sword', damage:105, range:95, arc:1.9, speed:0.3, rarity:'legendary', price:3000, sellPrice:1500,
-    recipe:{ fire_sword:1, royalMetal:5, lightCrystal:3 } },
-  dawn_sword:{ name:'سيف الفجر', icon:'🌅', type:'sword', damage:150, range:100, arc:2.0, speed:0.28, rarity:'legendary', price:8000, sellPrice:4000,
-    recipe:{ royal_sword:1, lightCrystal:10 } },
-  training_dagger:{ name:'خنجر', icon:'🔪', type:'dagger', damage:15, range:55, arc:1.4, speed:0.18, rarity:'common', price:0, sellPrice:25,
-    recipe:{ iron:2, wood:2 } },
-  wind_dagger:{ name:'خنجر الرياح', icon:'🔪', type:'dagger', damage:28, range:60, arc:1.5, speed:0.16, rarity:'rare', price:400, sellPrice:200,
-    recipe:{ training_dagger:1, iron:3, windFeather:3 } },
-  shadow_dagger:{ name:'خنجر الظلال', icon:'🔪', type:'dagger', damage:55, range:60, arc:1.5, speed:0.15, rarity:'epic', price:900, sellPrice:450,
-    recipe:{ wind_dagger:1, darkCrystal:3, shadowEssence:5 } },
-  wood_bow:{ name:'قوس خشبي', icon:'🏹', type:'bow', damage:25, speed:0.55, projSpeed:700, rarity:'common', price:0, sellPrice:40,
-    recipe:{ wood:6, rope:2 } },
-  forest_bow:{ name:'قوس الغابة', icon:'🏹', type:'bow', damage:35, speed:0.5, projSpeed:750, rarity:'rare', price:500, sellPrice:250,
-    recipe:{ wood_bow:1, oldwood:4, root:2 } },
-  frost_bow:{ name:'قوس الصقيع', icon:'🏹', type:'bow', damage:48, speed:0.5, projSpeed:800, rarity:'rare', price:700, sellPrice:350,
-    recipe:{ forest_bow:1, iceCrystal:4 } },
-  light_bow:{ name:'قوس النور', icon:'🏹', type:'bow', damage:88, speed:0.45, projSpeed:900, rarity:'legendary', price:2500, sellPrice:1250,
-    recipe:{ frost_bow:1, lightCrystal:4 } }
-};
+const spy = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { rootMargin: '-90px 0px -65% 0px', threshold: 0 });
 
-// ============ الدروع ============
-var ARMORS = {
-  adv_armor:{ name:'درع المغامر', icon:'🛡️', hp:30, def:8, rarity:'common', price:200, sellPrice:100,
-    recipe:{ leather:5, cloth:3, iron:2 } },
-  forest_armor:{ name:'درع الغابة', icon:'🛡️', hp:80, def:20, rarity:'rare', price:800, sellPrice:400,
-    recipe:{ adv_armor:1, leather:5, root:3 } },
-  ice_armor:{ name:'درع الصقيع', icon:'🛡️', hp:120, def:30, rarity:'rare', price:1400, sellPrice:700,
-    recipe:{ forest_armor:1, iceFur:5, iceCrystal:4 } },
-  royal_armor:{ name:'الدرع الملكي', icon:'🛡️', hp:180, def:45, rarity:'legendary', price:3000, sellPrice:1500,
-    recipe:{ ice_armor:1, royalMetal:6, lightCrystal:2 } },
-  dawn_armor:{ name:'درع الفجر', icon:'🛡️', hp:260, def:65, rarity:'legendary', price:8000, sellPrice:4000,
-    recipe:{ royal_armor:1, lightCrystal:8 } }
-};
+sections.forEach(s => spy.observe(s));
 
-// ============ العناصر والمواد ============
-var ITEMS = {
-  // أعشاب (تُجمع)
-  herb:{ name:'عشب طبي', icon:'🌿', heal:25, sellPrice:15 },
-  red_herb:{ name:'عشب أحمر', icon:'🌺', heal:60, sellPrice:35 },
-  blue_herb:{ name:'عشب أزرق', icon:'🔷', mp:40, sellPrice:30 },
-  mushroom:{ name:'فطر سحري', icon:'🍄', heal:100, sellPrice:60 },
-  berry:{ name:'توت', icon:'🍇', heal:15, sellPrice:8 },
-  // جرعات (تُصنع)
-  hp_small:{ name:'جرعة صغيرة', icon:'🧪', heal:50, sellPrice:25, price:50, recipe:{ herb:2, berry:1 } },
-  hp_med:{ name:'جرعة متوسطة', icon:'🧪', heal:150, sellPrice:70, price:150, recipe:{ hp_small:1, herb:3, mushroom:1 } },
-  hp_big:{ name:'جرعة كبيرة', icon:'🧪', heal:350, sellPrice:150, price:350, recipe:{ hp_med:1, red_herb:2, greencrystal:1 } },
-  mp_potion:{ name:'جرعة طاقة', icon:'🧴', mp:80, sellPrice:40, price:100, recipe:{ blue_herb:2, herb:2 } },
-  // مواد أساسية
-  wood:{ name:'خشب', icon:'🪵', sellPrice:5 },
-  iron:{ name:'حديد', icon:'⛏️', sellPrice:15 },
-  stone:{ name:'حجر', icon:'🪨', sellPrice:3 },
-  leather:{ name:'جلد', icon:'🟫', sellPrice:20 },
-  cloth:{ name:'قماش', icon:'🧵', sellPrice:10 },
-  rope:{ name:'حبل', icon:'🪢', sellPrice:12 },
-  // مواد متقدمة
-  oldwood:{ name:'خشب قديم', icon:'🌳', sellPrice:25 },
-  root:{ name:'جذر', icon:'🌱', sellPrice:18 },
-  greencrystal:{ name:'بلورة خضراء', icon:'💚', sellPrice:50 },
-  windFeather:{ name:'ريشة رياح', icon:'🪶', sellPrice:40 },
-  iceCrystal:{ name:'بلورة جليدية', icon:'❄️', sellPrice:70 },
-  iceOre:{ name:'خام جليدي', icon:'🧊', sellPrice:55 },
-  iceFur:{ name:'فرو جليدي', icon:'🐺', sellPrice:65 },
-  volcanicOre:{ name:'خام بركاني', icon:'🔥', sellPrice:100 },
-  redCrystal:{ name:'بلورة حمراء', icon:'🔴', sellPrice:130 },
-  royalMetal:{ name:'معدن ملكي', icon:'👑', sellPrice:200 },
-  lightCrystal:{ name:'بلورة نور', icon:'✨', sellPrice:250 },
-  darkCrystal:{ name:'بلورة ظلام', icon:'🖤', sellPrice:180 },
-  shadowEssence:{ name:'جوهر ظل', icon:'🌑', sellPrice:150 }
-};
+/* ===== الأمثلة القابلة للفتح ===== */
+document.querySelectorAll('.ex-head').forEach(head => {
+  head.addEventListener('click', () => {
+    head.parentElement.classList.toggle('open');
+  });
+});
 
-// ============ العوالم ============
-var WORLDS = [
-  { id:1, name:'وادي الفجر', icon:'🌲', start:1, end:15, grass:'#4a7c3a', grass2:'#3d6a2f', road:'#8a6b4a', tree:'#2a5a2a', trunk:'#5a3a20', building:'#d4b8a0', roof:'#8b4513', enemy:'#8b2c2c', enemyName:'ذئب' },
-  { id:2, name:'صحراء السراب', icon:'🌵', start:16, end:30, grass:'#c9a86a', grass2:'#b89858', road:'#8a6b4a', tree:'#8a7a3a', trunk:'#6a4a20', building:'#d4b88a', roof:'#8b6b3a', enemy:'#b35c2e', enemyName:'عقرب' },
-  { id:3, name:'مملكة الصقيع', icon:'❄️', start:31, end:45, grass:'#c8dce8', grass2:'#b0c8d4', road:'#7a8a9a', tree:'#8ab0c0', trunk:'#5a6a7a', building:'#a8c0d0', roof:'#5a7a8a', enemy:'#4a90e2', enemyName:'غولم' },
-  { id:4, name:'أعماق المرجان', icon:'🌊', start:46, end:60, grass:'#2a6a5a', grass2:'#1e5648', road:'#3a7a6a', tree:'#2a8a7a', trunk:'#3a5a4a', building:'#8ac0b0', roof:'#3a6a5a', enemy:'#2e8b7a', enemyName:'سلطعون' },
-  { id:5, name:'جبال اللهب', icon:'🔥', start:61, end:75, grass:'#5a2a10', grass2:'#4a2008', road:'#3a1a08', tree:'#6a2a1a', trunk:'#3a1a08', building:'#6a3a20', roof:'#3a1a0a', enemy:'#d4502c', enemyName:'وحش' },
-  { id:6, name:'المملكة القديمة', icon:'🏰', start:76, end:90, grass:'#5a4a3a', grass2:'#4a3a2a', road:'#3a2a1a', tree:'#5a4a3a', trunk:'#3a2a1a', building:'#a09080', roof:'#5a4a3a', enemy:'#8b6bc9', enemyName:'فارس' },
-  { id:7, name:'مملكة الظلال', icon:'🌑', start:91, end:95, grass:'#2a1a3a', grass2:'#1e0e2a', road:'#1a0a2a', tree:'#2a1a3a', trunk:'#100520', building:'#3a2a4a', roof:'#1a0a2a', enemy:'#9b5de5', enemyName:'شبح' }
+/* ===== الاختبار التفاعلي ===== */
+const questions = [
+  {
+    q: 'متجه اتجاه الخط المستقيم المار بالنقطتين ا(1 ، 2 ، 3) و ب(3 ، 5 ، 9) هو:',
+    opts: ['(2 ، 3 ، 6)', '(4 ، 7 ، 12)', '(3 ، 5 ، 9)', '(−2 ، −3 ، −6) فقط'],
+    correct: 0,
+    why: 'د = ب − ا = (3−1 ، 5−2 ، 9−3) = (2 ، 3 ، 6). لاحظ أن (−2 ، −3 ، −6) أيضًا متجه اتجاه صحيح لكن الاختيار الأول هو الأنسب.'
+  },
+  {
+    q: 'معادلة الخط المار بالنقطة ا(2 ، 1 ، −3) ومتجه اتجاهه د = (0 ، 2 ، 5) هي:',
+    opts: [
+      '(س−2)/0 = (ص−1)/2 = (ع+3)/5',
+      'س = 2 ، (ص−1)/2 = (ع+3)/5',
+      '(س−2)/2 = (ص−1)/5 = (ع+3)/0',
+      '(س−2)/5 = (ص−1)/2 = (ع+3)/0'
+    ],
+    correct: 1,
+    why: 'المركبة السينية أ = 0، فلا نكتب كسرًا مقامه صفر، بل نكتب س = 2 منفصلة.'
+  },
+  {
+    q: 'إذا كان د₁ · د₂ = 0 لمتجهي اتجاه خطين، فإن الخطين:',
+    opts: ['متوازيان', 'متخالفان بالضرورة', 'متعامدان', 'منطبقان'],
+    correct: 2,
+    why: 'حاصل الضرب القياسي = 0 يعني أن المتجهين متعامدان، وبالتالي الخطين متعامدان (سواء تقاطعا أو تخالفا).'
+  },
+  {
+    q: 'متجه اتجاه الخط المستقيم الموازي للمحور العيني هو:',
+    opts: ['(0 ، 1 ، 0)', '(1 ، 0 ، 0)', '(0 ، 0 ، 1)', '(1 ، 1 ، 1)'],
+    correct: 2,
+    why: 'الموازي لمحور العينات تكون مركبتاه السينية والصادية صفرًا، أي (0 ، 0 ، 1).'
+  },
+  {
+    q: 'الزاوية بين خطين متوازيين تساوي:',
+    opts: ['90°', '0°', '45°', '180°'],
+    correct: 1,
+    why: 'متجهات الاتجاه متوازية، فيكون جتا هـ = 1 والزاوية = 0° (أو 180° حسب الاتجاه، والزاوية بين خطين تُؤخذ حادة).'
+  },
+  {
+    q: 'في المعادلة (س−4)/3 = (ص+2)/(−1) = (ع−5)/2 فإن النقطة التي يمر بها الخط هي:',
+    opts: ['(4 ، 2 ، 5)', '(4 ، −2 ، 5)', '(−4 ، 2 ، −5)', '(3 ، −1 ، 2)'],
+    correct: 1,
+    why: 'من البسط نأخذ الأعداد بإشارتها المعاكسة: س₀ = 4، ص₀ = −2، ع₀ = 5 → النقطة (4 ، −2 ، 5).'
+  }
 ];
-function getWorld(s){ for(var i=0;i<WORLDS.length;i++) if(s>=WORLDS[i].start && s<=WORLDS[i].end) return WORLDS[i]; return WORLDS[0]; }
 
-// ============ توليد العالم ============
-function generateWorld(){
-  G.enemies = []; G.herbs = []; G.buildings = []; G.trees = []; G.rocks = [];
-  G.arrows = []; G.particles = []; G.drops = []; G.dmgNums = [];
-  
-  G.player.x = 0; G.player.y = 0;
-  
-  var world = getWorld(G.stage);
-  var isBoss = [15,30,45,60,75,90,95].indexOf(G.stage) >= 0;
-  var isMini = [10,25,40,55,71,73,86].indexOf(G.stage) >= 0;
-  
-  // أشجار
-  for(var i = 0; i < 45; i++){
-    var ang = Math.random() * Math.PI * 2;
-    var rad = 250 + Math.random() * 700;
-    var x = Math.cos(ang) * rad;
-    var y = Math.sin(ang) * rad;
-    if(Math.abs(x) < 180 && Math.abs(y) < 180) continue;
-    G.trees.push({ x:x, y:y, size:0.9+Math.random()*0.5, sway:Math.random()*6.28 });
-  }
-  
-  // مباني
-  var bSpots = [
-    [-320,-320,180,160],[320,-320,200,160],[-320,320,160,200],[320,320,200,200],
-    [-500,0,140,240],[500,0,140,240],[0,-500,280,140],[0,500,280,140],
-    [-600,-480,180,140],[600,-480,180,140],[-600,480,180,140],[600,480,180,140]
-  ];
-  bSpots.forEach(function(b){ G.buildings.push({ x:b[0], y:b[1], w:b[2], h:b[3] }); });
-  
-  // صخور
-  for(var i = 0; i < 25; i++){
-    var ang = Math.random() * Math.PI * 2;
-    var rad = 200 + Math.random() * 700;
-    var x = Math.cos(ang) * rad;
-    var y = Math.sin(ang) * rad;
-    if(Math.abs(x) < 150 && Math.abs(y) < 150) continue;
-    var ov = false;
-    for(var j = 0; j < G.buildings.length; j++){
-      var b = G.buildings[j];
-      if(Math.abs(x - b.x) < b.w/2 + 40 && Math.abs(y - b.y) < b.h/2 + 40){ ov = true; break; }
-    }
-    if(ov) continue;
-    G.rocks.push({ x:x, y:y, size:22+Math.random()*15 });
-  }
-  
-  // أعشاب
-  var herbKinds = ['herb','red_herb','blue_herb','mushroom','berry'];
-  for(var i = 0; i < 15; i++){
-    var ang = Math.random() * Math.PI * 2;
-    var rad = 150 + Math.random() * 600;
-    var x = Math.cos(ang) * rad;
-    var y = Math.sin(ang) * rad;
-    if(Math.abs(x) < 120 && Math.abs(y) < 120) continue;
-    G.herbs.push({ x:x, y:y, kind:herbKinds[Math.floor(Math.random()*herbKinds.length)], bob:Math.random()*6.28 });
-  }
-  
-  // أعداء
-  var count = isBoss ? 5 : isMini ? 5 : 4 + Math.floor(G.stage / 25);
-  G.enemiesTotal = count;
-  G.player.kills = 0;
-  
-  for(var i = 0; i < count; i++){
-    var isBoss2 = isBoss && i === 0;
-    var isMini2 = isMini && i === 0;
-    var ang = Math.random() * Math.PI * 2;
-    var rad = 200 + Math.random() * 400;
-    var x = Math.cos(ang) * rad;
-    var y = Math.sin(ang) * rad;
-    
-    var hp = isBoss2 ? 600 + G.stage * 30 : isMini2 ? 300 : 80 + G.stage * 4;
-    var dmg = isBoss2 ? 25 : isMini2 ? 18 : 8 + Math.floor(G.stage/10);
-    var rad2 = isBoss2 ? 45 : isMini2 ? 35 : 22;
-    
-    G.enemies.push({
-      x:x, y:y, hp:hp, hpMax:hp, damage:dmg,
-      speed: isBoss2 ? 80 : isMini2 ? 100 : 110 + Math.random()*40,
-      radius: rad2, isBoss:isBoss2, isMini:isMini2,
-      lastAttack:0, attackRate:1.2, state:'patrol',
-      patrolAngle:Math.random()*6.28, patrolTimer:Math.random()*2,
-      bob:Math.random()*6.28, hitFlash:0, world:world
-    });
-  }
-  
-  updateQuests();
-  updateUI();
-}
+const quizBox = document.getElementById('quiz-box');
+const scoreBox = document.getElementById('score-box');
+let answered = 0, correctCount = 0;
 
-// ============ المهام ============
-function updateQuests(){
-  var w = getWorld(G.stage);
-  var isBoss = [15,30,45,60,75,90,95].indexOf(G.stage) >= 0;
-  var quests = [];
-  
-  quests.push({
-    type:'main',
-    title: '👑 ' + (isBoss ? 'اهزم الزعيم' : 'أكمل المرحلة ' + G.stage),
-    current: G.player.kills || 0,
-    target: G.enemiesTotal,
-    done: (G.player.kills||0) >= G.enemiesTotal
-  });
-  
-  quests.push({
-    type:'side',
-    title: '🌿 اجمع 3 أعشاب',
-    current: countHerbs(),
-    target: 3,
-    done: countHerbs() >= 3
-  });
-  
-  quests.push({
-    type:'side',
-    title: '💰 امتلك 500 ذهب',
-    current: G.player.gold,
-    target: 500,
-    done: G.player.gold >= 500
-  });
-  
-  quests.push({
-    type:'side',
-    title: '⭐ المستوى 3',
-    current: G.player.level,
-    target: 3,
-    done: G.player.level >= 3
-  });
-  
-  quests.push({
-    type:'side',
-    title: '⚒️ اصنع 3 عناصر',
-    current: G.stats.crafted,
-    target: 3,
-    done: G.stats.crafted >= 3
-  });
-  
-  G.quests = quests;
-  renderQuestsMini();
-}
+questions.forEach((item, i) => {
+  const div = document.createElement('div');
+  div.className = 'quiz-item';
+  div.innerHTML = `
+    <p class="q-text">${i+1}) ${item.q}</p>
+    <div class="opts">
+      ${item.opts.map((o, j) => `<button class="opt" data-i="${i}" data-j="${j}">${o}</button>`).join('')}
+    </div>
+    <div class="feedback"></div>
+  `;
+  quizBox.appendChild(div);
+});
 
-function renderQuestsMini(){
-  var el = document.getElementById('questsMini');
-  var html = '';
-  G.quests.forEach(function(q){
-    var cls = 'q-item ' + q.type + (q.done ? ' done' : '');
-    html += '<div class="' + cls + '">' +
-      '<div class="qn">' + q.title + (q.done ? ' ✓' : '') + '</div>' +
-      '<div class="qp">' + q.current + ' / ' + q.target + '</div>' +
-    '</div>';
-  });
-  el.innerHTML = html;
-}
+quizBox.addEventListener('click', (e) => {
+  const btn = e.target.closest('.opt');
+  if (!btn || btn.disabled) return;
 
-function countHerbs(){
-  var c = 0;
-  ['herb','red_herb','blue_herb','mushroom','berry'].forEach(function(k){ c += G.inventory[k] || 0; });
-  return c;
-}
+  const qi = +btn.dataset.i;
+  const ji = +btn.dataset.j;
+  const item = questions[qi];
+  const parent = btn.closest('.quiz-item');
+  const buttons = parent.querySelectorAll('.opt');
+  const fb = parent.querySelector('.feedback');
 
-// ============ تصادم ============
-function collides(x, y, r){
-  for(var i = 0; i < G.buildings.length; i++){
-    var b = G.buildings[i];
-    if(Math.abs(x - b.x) < b.w/2 + r && Math.abs(y - b.y) < b.h/2 + r) return true;
-  }
-  return false;
-}
+  buttons.forEach(b => b.disabled = true);
+  buttons[item.correct].classList.add('correct');
 
-// ============ اللاعب ============
-function updatePlayer(dt){
-  var p = G.player;
-  var sp = 280;
-  var mx = 0, my = 0;
-  var f = G.input.f + G.joy.jy;
-  var r = G.input.r + G.joy.jx;
-  
-  if(Math.abs(f) > 0.1 || Math.abs(r) > 0.1){
-    var len = Math.hypot(f, r);
-    mx = (r / len) * (sp * Math.min(1, len));
-    my = -(f / len) * (sp * Math.min(1, len));
-  }
-  
-  var spd = G.input.block ? 0.4 : 1;
-  var nx = p.x + mx * spd * dt;
-  var ny = p.y + my * spd * dt;
-  
-  if(!collides(nx, p.y, 25)) p.x = nx;
-  if(!collides(p.x, ny, 25)) p.y = ny;
-  
-  if(p.x < -1100) p.x = -1100;
-  if(p.x > 1100) p.x = 1100;
-  if(p.y < -1100) p.y = -1100;
-  if(p.y > 1100) p.y = 1100;
-  
-  if(Math.abs(mx) > 10 || Math.abs(my) > 10){
-    if(Math.abs(mx) > Math.abs(my)) p.dir = mx > 0 ? 'right' : 'left';
-    else p.dir = my > 0 ? 'down' : 'up';
-    p.anim += dt * 10;
-  } else p.anim = 0;
-  
-  p.attackAnim = Math.max(0, p.attackAnim - dt);
-  p.hurtAnim = Math.max(0, p.hurtAnim - dt);
-  p.invuln = Math.max(0, p.invuln - dt);
-  
-  if(G.input.block) p.blockAnim = Math.min(1, p.blockAnim + dt*10);
-  else p.blockAnim = Math.max(0, p.blockAnim - dt*10);
-  
-  if(G.input.attack) doAttack();
-  
-  // تجميع الأعشاب
-  for(var i = G.herbs.length - 1; i >= 0; i--){
-    var h = G.herbs[i];
-    if(Math.hypot(h.x - p.x, h.y - p.y) < 60){
-      G.inventory[h.kind] = (G.inventory[h.kind] || 0) + 1;
-      showNotif('🌿 ' + ITEMS[h.kind].name);
-      spawnParticles(h.x, h.y, '#44ff88', 10);
-      G.herbs.splice(i, 1);
-      updateQuests();
-    }
-  }
-  
-  // تجميع الإسقاطات
-  for(var i = G.drops.length - 1; i >= 0; i--){
-    var d = G.drops[i];
-    if(Math.hypot(d.x - p.x, d.y - p.y) < 60){
-      G.inventory[d.kind] = (G.inventory[d.kind] || 0) + 1;
-      showNotif('🎁 ' + (ITEMS[d.kind] ? ITEMS[d.kind].name : d.kind));
-      G.drops.splice(i, 1);
-    }
-  }
-  
-  p.mp = Math.min(p.mpMax, p.mp + dt * 3);
-  
-  // إعادة السهام
-  G.arrowRegenTimer += dt;
-  if(G.arrowRegenTimer > 1){
-    G.arrowRegenTimer = 0;
-    if(G.arrowsCount < 30){
-      G.arrowsCount = Math.min(30, G.arrowsCount + 2);
-    }
-  }
-}
-
-// ============ الهجوم ============
-function doAttack(){
-  var p = G.player;
-  var w = WEAPONS[G.currentWeapon];
-  var now = G.time;
-  if(now - (p._lastAttack||0) < w.speed) return;
-  p._lastAttack = now;
-  p.attackAnim = 0.35;
-  
-  if(w.type === 'bow'){
-    if(G.arrowsCount <= 0){ showNotif('🏹 نفدت السهام!'); return; }
-    G.arrowsCount--;
-    var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
-    var facing = angles[p.dir] || 0;
-    var dirX = Math.cos(facing), dirY = Math.sin(facing);
-    G.arrows.push({ x:p.x, y:p.y, vx:dirX*w.projSpeed, vy:dirY*w.projSpeed, life:2, damage:w.damage });
-    return;
-  }
-  
-  var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
-  var facing = angles[p.dir] || 0;
-  
-  for(var i = 0; i < G.enemies.length; i++){
-    var e = G.enemies[i];
-    var dx = e.x - p.x, dy = e.y - p.y;
-    var d = Math.hypot(dx, dy);
-    if(d > w.range + e.radius) continue;
-    var ang = Math.atan2(dy, dx);
-    var diff = Math.abs(((ang - facing + Math.PI*3) % (Math.PI*2)) - Math.PI);
-    if(diff > w.arc/2) continue;
-    hitEnemy(e, w.damage);
-  }
-  
-  for(var j = 0; j < 8; j++){
-    var a = facing + (Math.random()-0.5)*w.arc;
-    spawnParticles(p.x + Math.cos(a)*50, p.y + Math.sin(a)*50, '#ffdd66', 3);
-  }
-}
-
-function hitEnemy(e, dmg){
-  e.hp -= dmg;
-  e.hitFlash = 0.15;
-  G.dmgNums.push({ x:e.x, y:e.y, amount:Math.round(dmg), life:0.9, maxLife:0.9, vy:-60, color:'#ff4444' });
-  spawnParticles(e.x, e.y, '#ff6644', 8);
-  if(e.hp <= 0) killEnemy(e);
-}
-
-function killEnemy(e){
-  var idx = G.enemies.indexOf(e);
-  if(idx < 0) return;
-  G.enemies.splice(idx, 1);
-  
-  spawnParticles(e.x, e.y, getWorld(G.stage).enemy, 25);
-  G.player.gold += 20 + G.stage * 5;
-  G.player.xp += 25 + G.stage * 2;
-  G.player.kills++;
-  G.stats.kills++;
-  
-  while(G.player.xp >= G.player.xpNext){
-    G.player.xp -= G.player.xpNext;
-    G.player.level++;
-    G.player.xpNext = Math.floor(G.player.xpNext * 1.5);
-    G.player.hpMax += 15; G.player.hp = G.player.hpMax;
-    G.player.atk += 3; G.player.def += 1;
-    showNotif('🎉 مستوى ' + G.player.level + '!');
-  }
-  
-  // إسقاط مواد
-  if(Math.random() < 0.6){
-    var world = getWorld(G.stage);
-    var allMats = {
-      1:['wood','iron','leather','cloth','herb'],
-      2:['stone','iron','windFeather','herb'],
-      3:['iceCrystal','iceOre','iceFur','stone'],
-      4:['stone','iron','lightCrystal'],
-      5:['volcanicOre','redCrystal','iron'],
-      6:['royalMetal','lightCrystal','stone'],
-      7:['darkCrystal','shadowEssence','lightCrystal']
-    };
-    var list = allMats[world.id] || ['iron'];
-    var kind = list[Math.floor(Math.random()*list.length)];
-    G.drops.push({ x:e.x, y:e.y, kind:kind, bob:0 });
-  }
-  
-  updateUI();
-  updateQuests();
-  showNotif('💀 ' + getWorld(G.stage).enemyName + ' قُتل!');
-  
-  if(e.isBoss) setTimeout(nextStage, 1800);
-  else if(G.enemies.length === 0) setTimeout(nextStage, 1500);
-  saveGame();
-}
-
-// ============ الأعداء ============
-function updateEnemies(dt){
-  var p = G.player;
-  for(var i = 0; i < G.enemies.length; i++){
-    var e = G.enemies[i];
-    e.bob += dt * 4;
-    e.hitFlash = Math.max(0, e.hitFlash - dt);
-    
-    var dx = p.x - e.x, dy = p.y - e.y;
-    var d = Math.hypot(dx, dy);
-    
-    if(d < 20) e.state = 'attack';
-    else if(d < 400) e.state = 'chase';
-    else e.state = 'patrol';
-    
-    if(e.state === 'chase' || e.state === 'attack'){
-      if(d > 50){
-        var move = e.speed * dt;
-        var nx = e.x + dx/d * move;
-        var ny = e.y + dy/d * move;
-        if(!collides(nx, e.y, e.radius)) e.x = nx;
-        if(!collides(e.x, ny, e.radius)) e.y = ny;
-      }
-      if(d < 70 && G.time - e.lastAttack > e.attackRate){
-        e.lastAttack = G.time;
-        if(p.invuln <= 0){
-          var blocked = G.input.block && p.attackAnim <= 0;
-          var dmg = blocked ? Math.floor(e.damage * 0.15) : e.damage;
-          dmg = Math.max(1, dmg - Math.floor(p.def * 0.4));
-          p.hp -= dmg;
-          p.hurtAnim = 0.3;
-          p.invuln = 0.6;
-          G.dmgNums.push({ x:p.x, y:p.y, amount:dmg, life:0.9, maxLife:0.9, vy:-60, color: blocked ? '#4a90e2' : '#ff2244' });
-          flashDamage();
-          if(p.hp <= 0) playerDied();
-        }
-      }
-    } else {
-      e.patrolTimer -= dt;
-      if(e.patrolTimer <= 0){
-        e.patrolTimer = 2 + Math.random()*2;
-        e.patrolAngle = Math.random() * 6.28;
-      }
-      var move2 = e.speed * 0.3 * dt;
-      var nx2 = e.x + Math.cos(e.patrolAngle) * move2;
-      var ny2 = e.y + Math.sin(e.patrolAngle) * move2;
-      if(!collides(nx2, e.y, e.radius)) e.x = nx2;
-      if(!collides(e.x, ny2, e.radius)) e.y = ny2;
-    }
-  }
-}
-
-function playerDied(){
-  G.player.hp = 0;
-  G.paused = true;
-  showNotif('💀 هُزمت!');
-  setTimeout(function(){
-    G.player.hp = G.player.hpMax;
-    G.player.x = 0; G.player.y = 0;
-    G.paused = false;
-    updateUI();
-    showNotif('🌟 عدت للحياة!');
-  }, 2200);
-}
-
-function updateArrows(dt){
-  for(var i = G.arrows.length - 1; i >= 0; i--){
-    var a = G.arrows[i];
-    a.life -= dt;
-    a.x += a.vx * dt;
-    a.y += a.vy * dt;
-    var hit = false;
-    for(var j = 0; j < G.enemies.length; j++){
-      var e = G.enemies[j];
-      if(Math.hypot(e.x - a.x, e.y - a.y) < e.radius + 20){
-        hitEnemy(e, a.damage);
-        hit = true;
-        break;
-      }
-    }
-    if(hit || a.life <= 0) G.arrows.splice(i, 1);
-  }
-}
-
-function spawnParticles(x, y, color, count){
-  for(var i = 0; i < count; i++){
-    var a = Math.random() * 6.28;
-    var s = 50 + Math.random() * 150;
-    G.particles.push({ x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 60, life:0.6, maxLife:0.6, color:color, size:3+Math.random()*4 });
-  }
-}
-
-function updateParticles(dt){
-  for(var i = G.particles.length - 1; i >= 0; i--){
-    var p = G.particles[i];
-    p.life -= dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vy += 200 * dt;
-    p.vx *= 0.96;
-    if(p.life <= 0) G.particles.splice(i, 1);
-  }
-  for(var j = G.dmgNums.length - 1; j >= 0; j--){
-    var d = G.dmgNums[j];
-    d.life -= dt;
-    d.y += d.vy * dt;
-    d.vy *= 0.92;
-    if(d.life <= 0) G.dmgNums.splice(j, 1);
-  }
-}
-
-function updateCamera(){
-  var p = G.player;
-  var tx = p.x - W / 2;
-  var ty = p.y - H / 2;
-  G.cam.x += (tx - G.cam.x) * 0.15;
-  G.cam.y += (ty - G.cam.y) * 0.15;
-}
-
-// ============ الحلقة ============
-var lastT = 0;
-function loop(t){
-  if(!G.running) return;
-  requestAnimationFrame(loop);
-  var dt = Math.min(0.05, (t - lastT) / 1000);
-  lastT = t;
-  G.time += dt;
-  
-  if(!G.paused){
-    updatePlayer(dt);
-    updateEnemies(dt);
-    updateArrows(dt);
-    updateParticles(dt);
-    updateCamera();
-  }
-  render();
-  updateMinimap();
-}
-
-// ============ الرسم 2D ============
-function render(){
-  var world = getWorld(G.stage);
-  var cx = G.cam.x, cy = G.cam.y;
-  
-  ctx.fillStyle = world.grass;
-  ctx.fillRect(0, 0, W, H);
-  
-  // نمط مربعات
-  var tileSize = 80;
-  var startX = Math.floor(cx / tileSize) * tileSize;
-  var startY = Math.floor(cy / tileSize) * tileSize;
-  for(var x = startX; x < cx + W + tileSize; x += tileSize){
-    for(var y = startY; y < cy + H + tileSize; y += tileSize){
-      if((Math.floor(x/tileSize) + Math.floor(y/tileSize)) % 2 === 0){
-        ctx.fillStyle = world.grass2;
-        ctx.fillRect(x - cx, y - cy, tileSize, tileSize);
-      }
-    }
-  }
-  
-  // طرق
-  ctx.fillStyle = world.road;
-  ctx.fillRect(-cx, -60 - cy, 2400, 120);
-  ctx.fillRect(-60 - cx, -cy, 120, 2400);
-  
-  ctx.save();
-  ctx.translate(-cx, -cy);
-  
-  // أشجار
-  for(var i = 0; i < G.trees.length; i++){
-    var tr = G.trees[i];
-    if(tr.x < cx - 100 || tr.x > cx + W + 100 || tr.y < cy - 100 || tr.y > cy + H + 100) continue;
-    var sway = Math.sin(G.time + tr.sway) * 3;
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
-    ctx.beginPath();
-    ctx.ellipse(tr.x, tr.y + 15, 30 * tr.size, 12 * tr.size, 0, 0, 6.28);
-    ctx.fill();
-    ctx.fillStyle = world.trunk;
-    ctx.fillRect(tr.x - 8 * tr.size, tr.y - 30 * tr.size, 16 * tr.size, 45 * tr.size);
-    ctx.fillStyle = world.tree;
-    ctx.beginPath();
-    ctx.arc(tr.x + sway, tr.y - 50 * tr.size, 32 * tr.size, 0, 6.28);
-    ctx.fill();
-  }
-  
-  // صخور
-  for(var i = 0; i < G.rocks.length; i++){
-    var r = G.rocks[i];
-    if(r.x < cx - 100 || r.x > cx + W + 100 || r.y < cy - 100 || r.y > cy + H + 100) continue;
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
-    ctx.beginPath();
-    ctx.ellipse(r.x, r.y + r.size*0.6, r.size, r.size*0.4, 0, 0, 6.28);
-    ctx.fill();
-    ctx.fillStyle = '#7a7a7a';
-    ctx.beginPath();
-    ctx.arc(r.x, r.y, r.size, 0, 6.28);
-    ctx.fill();
-  }
-  
-  // مباني
-  for(var i = 0; i < G.buildings.length; i++){
-    var b = G.buildings[i];
-    if(b.x + b.w/2 < cx - 100 || b.x - b.w/2 > cx + W + 100) continue;
-    if(b.y + b.h/2 < cy - 100 || b.y - b.h/2 > cy + H + 100) continue;
-    ctx.fillStyle = 'rgba(0,0,0,.3)';
-    ctx.fillRect(b.x - b.w/2 + 10, b.y - b.h/2 + 10, b.w, b.h);
-    ctx.fillStyle = world.building;
-    ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
-    ctx.fillStyle = world.roof;
-    ctx.fillRect(b.x - b.w/2 - 8, b.y - b.h/2 - 12, b.w + 16, 30);
-    // نوافذ
-    ctx.fillStyle = '#ffcc66';
-    var cols = Math.max(2, Math.floor(b.w / 60));
-    var rows = Math.max(1, Math.floor(b.h / 60));
-    for(var r2 = 0; r2 < rows; r2++){
-      for(var c2 = 0; c2 < cols; c2++){
-        var wx = b.x - b.w/2 + 25 + c2 * (b.w - 50) / Math.max(1, cols - 1);
-        var wy = b.y - b.h/2 + 35 + r2 * (b.h - 50) / Math.max(1, rows);
-        ctx.fillRect(wx - 10, wy - 12, 20, 24);
-      }
-    }
-    // باب
-    ctx.fillStyle = '#3a2a1a';
-    ctx.fillRect(b.x - 15, b.y + b.h/2 - 30, 30, 30);
-  }
-  
-  // أعشاب
-  for(var i = 0; i < G.herbs.length; i++){
-    var h = G.herbs[i];
-    if(h.x < cx - 60 || h.x > cx + W + 60 || h.y < cy - 60 || h.y > cy + H + 60) continue;
-    var yy = h.y + Math.sin(h.bob + G.time * 3) * 4;
-    var colors = { herb:'#44ff88', red_herb:'#ff5566', blue_herb:'#5588ff', mushroom:'#ff9944', berry:'#cc44ff' };
-    var c = colors[h.kind] || '#44ff88';
-    var grd = ctx.createRadialGradient(h.x, yy, 0, h.x, yy, 40);
-    grd.addColorStop(0, c + '88');
-    grd.addColorStop(1, c + '00');
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.arc(h.x, yy, 40, 0, 6.28);
-    ctx.fill();
-    ctx.fillStyle = c;
-    ctx.beginPath();
-    ctx.arc(h.x, yy, 8, 0, 6.28);
-    ctx.fill();
-  }
-  
-  // إسقاطات
-  for(var i = 0; i < G.drops.length; i++){
-    var d = G.drops[i];
-    d.bob += 0.05;
-    var yy = d.y + Math.sin(d.bob) * 4;
-    var c = ITEMS[d.kind] ? '#ffcc44' : '#888';
-    var grd = ctx.createRadialGradient(d.x, yy, 0, d.x, yy, 35);
-    grd.addColorStop(0, 'rgba(255,200,80,.6)');
-    grd.addColorStop(1, 'rgba(255,200,80,0)');
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.arc(d.x, yy, 35, 0, 6.28);
-    ctx.fill();
-    ctx.font = '24px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ITEMS[d.kind] ? ITEMS[d.kind].icon : '📦', d.x, yy);
-  }
-  
-  // سهام
-  for(var i = 0; i < G.arrows.length; i++){
-    var a = G.arrows[i];
-    ctx.save();
-    ctx.translate(a.x, a.y);
-    ctx.rotate(Math.atan2(a.vy, a.vx));
-    ctx.fillStyle = '#ffcc44';
-    ctx.fillRect(-15, -3, 30, 6);
-    ctx.fillStyle = '#aaa';
-    ctx.beginPath();
-    ctx.moveTo(15, -5);
-    ctx.lineTo(25, 0);
-    ctx.lineTo(15, 5);
-    ctx.fill();
-    ctx.restore();
-  }
-  
-  // أعداء
-  for(var i = 0; i < G.enemies.length; i++){
-    var e = G.enemies[i];
-    if(e.x < cx - 200 || e.x > cx + W + 200 || e.y < cy - 200 || e.y > cy + H + 200) continue;
-    var x = e.x, y = e.y + Math.sin(e.bob) * 3;
-    
-    ctx.fillStyle = 'rgba(0,0,0,.35)';
-    ctx.beginPath();
-    ctx.ellipse(e.x, e.y + 18, e.radius * 1.2, 8, 0, 0, 6.28);
-    ctx.fill();
-    
-    var baseColor = e.hitFlash > 0 ? '#ffffff' : e.world.enemy;
-    ctx.fillStyle = baseColor;
-    ctx.beginPath();
-    ctx.arc(x, y - 5, e.isBoss ? 32 : e.isMini ? 26 : 18, 0, 6.28);
-    ctx.fill();
-    
-    // صدري
-    ctx.fillStyle = shade(baseColor, -20);
-    ctx.fillRect(x - 12, y - 5, 24, 20);
-    
-    // رأس
-    ctx.fillStyle = '#1a1a2a';
-    ctx.beginPath();
-    ctx.arc(x, y - 22, e.isBoss ? 18 : e.isMini ? 14 : 10, 0, 6.28);
-    ctx.fill();
-    
-    // عيون
-    ctx.fillStyle = '#ff0000';
-    ctx.shadowColor = '#ff0000';
-    ctx.shadowBlur = 10;
-    var eyeR = e.isBoss ? 4 : 2.5;
-    var eyeOff = e.isBoss ? 7 : 5;
-    ctx.beginPath();
-    ctx.arc(x - eyeOff, y - 22, eyeR, 0, 6.28);
-    ctx.arc(x + eyeOff, y - 22, eyeR, 0, 6.28);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    
-    // شريط صحة
-    var barW = e.isBoss ? 100 : e.isMini ? 70 : 44;
-    var barY = y - (e.isBoss ? 65 : e.isMini ? 55 : 42);
-    ctx.fillStyle = 'rgba(0,0,0,.85)';
-    ctx.fillRect(x - barW/2 - 2, barY - 2, barW + 4, 8);
-    ctx.fillStyle = '#e63946';
-    ctx.fillRect(x - barW/2, barY, barW, 4);
-    ctx.fillStyle = '#43aa8b';
-    ctx.fillRect(x - barW/2, barY, barW * Math.max(0, e.hp/e.hpMax), 4);
-    
-    // اسم الزعيم
-    if(e.isBoss){
-      ctx.font = 'bold 14px Tahoma';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#f5c542';
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
-      ctx.strokeText('👑 ' + e.world.enemyName + ' الزعيم', x, barY - 15);
-      ctx.fillText('👑 ' + e.world.enemyName + ' الزعيم', x, barY - 15);
-    }
-  }
-  
-  // اللاعب
-  drawPlayer(G.player);
-  
-  // جسيمات
-  for(var i = 0; i < G.particles.length; i++){
-    var p = G.particles[i];
-    ctx.globalAlpha = p.life / p.maxLife;
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
-  }
-  ctx.globalAlpha = 1;
-  
-  // أرقام ضرر
-  ctx.font = 'bold 22px Tahoma';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineWidth = 4;
-  for(var i = 0; i < G.dmgNums.length; i++){
-    var d = G.dmgNums[i];
-    ctx.globalAlpha = Math.min(1, d.life / d.maxLife * 1.5);
-    ctx.strokeStyle = '#000';
-    ctx.fillStyle = d.color;
-    ctx.strokeText('-' + d.amount, d.x, d.y);
-    ctx.fillText('-' + d.amount, d.x, d.y);
-  }
-  ctx.globalAlpha = 1;
-  
-  ctx.restore();
-  
-  // وميض الضرر
-  if(G.player.hurtAnim > 0){
-    ctx.fillStyle = 'rgba(230,57,70,' + (G.player.hurtAnim * 2) + ')';
-    ctx.fillRect(0, 0, W, H);
-  }
-}
-
-function drawPlayer(p){
-  var walking = (Math.abs(G.joy.jx) > 0.1 || Math.abs(G.joy.jy) > 0.1 || Math.abs(G.input.f) > 0);
-  var walkBob = walking ? Math.sin(p.anim * 2) * 2 : 0;
-  var x = p.x, y = p.y + walkBob;
-  
-  // ظل
-  ctx.fillStyle = 'rgba(0,0,0,.35)';
-  ctx.beginPath();
-  ctx.ellipse(p.x, p.y + 20, 22, 8, 0, 0, 6.28);
-  ctx.fill();
-  
-  var blink = p.invuln > 0 && Math.floor(p.invuln * 10) % 2 === 0;
-  ctx.globalAlpha = blink ? 0.5 : 1;
-  
-  // عباءة
-  ctx.fillStyle = '#c42c2c';
-  ctx.beginPath();
-  ctx.moveTo(x, y + 18);
-  ctx.lineTo(x - 20, y - 8);
-  ctx.lineTo(x + 20, y - 8);
-  ctx.closePath();
-  ctx.fill();
-  
-  // جسم
-  ctx.fillStyle = p.hurtAnim > 0 ? '#ff8888' : '#5a5a7a';
-  ctx.beginPath();
-  ctx.arc(x, y - 5, 18, 0, 6.28);
-  ctx.fill();
-  
-  // صدري
-  ctx.fillStyle = '#8a8aa0';
-  ctx.fillRect(x - 12, y - 12, 24, 18);
-  
-  // رأس
-  ctx.fillStyle = '#f0c098';
-  ctx.beginPath();
-  ctx.arc(x, y - 22, 12, 0, 6.28);
-  ctx.fill();
-  
-  // شعر
-  ctx.fillStyle = '#2a1a0a';
-  ctx.beginPath();
-  ctx.arc(x, y - 25, 12, Math.PI, 0);
-  ctx.fill();
-  
-  // عيون
-  ctx.fillStyle = '#000';
-  if(p.dir === 'down'){
-    ctx.fillRect(x - 4, y - 24, 2, 3);
-    ctx.fillRect(x + 2, y - 24, 2, 3);
-  } else if(p.dir === 'left'){
-    ctx.fillRect(x - 8, y - 24, 2, 3);
-  } else if(p.dir === 'right'){
-    ctx.fillRect(x + 6, y - 24, 2, 3);
-  }
-  
-  var w = WEAPONS[G.currentWeapon];
-  
-  // سيف
-  if(w.type === 'sword' || w.type === 'dagger'){
-    var angles = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
-    var facing = angles[p.dir] || 0;
-    var swingAng = facing - 0.6;
-    if(p.attackAnim > 0){
-      var prog = 1 - (p.attackAnim / 0.35);
-      swingAng = facing + (-0.9 + prog * 1.8);
-    }
-    
-    ctx.save();
-    ctx.translate(x, y - 5);
-    ctx.rotate(swingAng);
-    
-    ctx.fillStyle = '#f0c098';
-    ctx.beginPath();
-    ctx.arc(15, 0, 6, 0, 6.28);
-    ctx.fill();
-    
-    ctx.fillStyle = '#3a2a1a';
-    ctx.fillRect(12, -3, 12, 6);
-    
-    ctx.fillStyle = '#f5c542';
-    ctx.fillRect(22, -8, 5, 16);
-    
-    // نصل
-    var bladeColor = '#e8e8f0';
-    if(w.rarity === 'rare') bladeColor = w.icon === '🔥' ? '#ff8844' : '#88ccff';
-    else if(w.rarity === 'legendary') bladeColor = '#ffe680';
-    ctx.fillStyle = bladeColor;
-    ctx.fillRect(26, -3, 40, 6);
-    ctx.beginPath();
-    ctx.moveTo(66, -3);
-    ctx.lineTo(76, 0);
-    ctx.lineTo(66, 3);
-    ctx.fill();
-    
-    ctx.restore();
-  }
-  
-  // قوس
-  if(w.type === 'bow'){
-    var angles2 = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
-    var facing2 = angles2[p.dir] || 0;
-    ctx.save();
-    ctx.translate(x, y - 5);
-    ctx.rotate(facing2);
-    
-    ctx.fillStyle = '#f0c098';
-    ctx.beginPath();
-    ctx.arc(15, 0, 6, 0, 6.28);
-    ctx.fill();
-    
-    ctx.strokeStyle = '#6b4a2a';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(20, 0, 20, -Math.PI*0.7, Math.PI*0.7);
-    ctx.stroke();
-    
-    // وتر
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(20 + Math.cos(-Math.PI*0.7)*20, Math.sin(-Math.PI*0.7)*20);
-    ctx.lineTo(20 + Math.cos(Math.PI*0.7)*20, Math.sin(Math.PI*0.7)*20);
-    ctx.stroke();
-    
-    ctx.restore();
-  }
-  
-  // درع
-  if(p.blockAnim > 0){
-    var angles3 = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
-    var facing3 = angles3[p.dir] || 0;
-    var shieldX = x - Math.sin(facing3) * 18;
-    var shieldY = y - 5 + Math.cos(facing3) * 18;
-    
-    ctx.save();
-    ctx.translate(shieldX, shieldY);
-    ctx.rotate(facing3);
-    
-    ctx.fillStyle = '#f5c542';
-    ctx.beginPath();
-    ctx.arc(0, 0, 18, 0, 6.28);
-    ctx.fill();
-    ctx.fillStyle = '#8b4513';
-    ctx.beginPath();
-    ctx.arc(0, 0, 13, 0, 6.28);
-    ctx.fill();
-    ctx.fillStyle = '#f5c542';
-    ctx.beginPath();
-    ctx.arc(0, 0, 5, 0, 6.28);
-    ctx.fill();
-    
-    ctx.restore();
-  }
-  
-  ctx.globalAlpha = 1;
-}
-
-function shade(hex, amt){
-  if(hex.charAt(0) === '#'){
-    var c = parseInt(hex.replace('#',''), 16);
-    var r = Math.min(255, Math.max(0, ((c >> 16) & 255) + amt));
-    var g = Math.min(255, Math.max(0, ((c >> 8) & 255) + amt));
-    var b = Math.min(255, Math.max(0, (c & 255) + amt));
-    return 'rgb(' + r + ',' + g + ',' + b + ')';
-  }
-  return hex;
-}
-
-// ============ Minimap ============
-var mmc = document.getElementById('mmc');
-var mmx = mmc.getContext('2d');
-function updateMinimap(){
-  var size = 220;
-  var scale = size / 2400;
-  var cx = size / 2, cy = size / 2;
-  var world = getWorld(G.stage);
-  mmx.fillStyle = world.grass;
-  mmx.fillRect(0, 0, size, size);
-  mmx.fillStyle = world.road;
-  mmx.fillRect(0, cy - 60 * scale, size, 120 * scale);
-  mmx.fillRect(cx - 60 * scale, 0, 120 * scale, size);
-  mmx.fillStyle = 'rgba(60,40,20,.7)';
-  for(var i = 0; i < G.buildings.length; i++){
-    var b = G.buildings[i];
-    mmx.fillRect(cx + (b.x - b.w/2)*scale, cy + (b.y - b.h/2)*scale, b.w*scale, b.h*scale);
-  }
-  mmx.fillStyle = '#44ff88';
-  for(var i = 0; i < G.herbs.length; i++){
-    mmx.beginPath();
-    mmx.arc(cx + G.herbs[i].x * scale, cy + G.herbs[i].y * scale, 2, 0, 6.28);
-    mmx.fill();
-  }
-  for(var i = 0; i < G.enemies.length; i++){
-    var e = G.enemies[i];
-    mmx.fillStyle = e.isBoss ? '#f5c542' : e.isMini ? '#9b5de5' : '#e63946';
-    mmx.beginPath();
-    mmx.arc(cx + e.x * scale, cy + e.y * scale, e.isBoss ? 5 : 3, 0, 6.28);
-    mmx.fill();
-  }
-  mmx.fillStyle = '#43aa8b';
-  mmx.beginPath();
-  mmx.arc(cx + G.player.x * scale, cy + G.player.y * scale, 4, 0, 6.28);
-  mmx.fill();
-}
-
-// ============ UI ============
-function updateUI(){
-  var p = G.player;
-  document.getElementById('lvl').textContent = p.level;
-  document.getElementById('gold').textContent = p.gold;
-  document.getElementById('kills').textContent = p.kills || 0;
-  document.getElementById('target').textContent = G.enemiesTotal;
-  
-  var hpPct = Math.max(0, p.hp / p.hpMax * 100);
-  document.getElementById('hpFill').style.width = hpPct + '%';
-  document.getElementById('hpTxt').textContent = '❤️ ' + Math.round(p.hp) + '/' + p.hpMax;
-  if(hpPct < 30) document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#e63946,#ff6b81)';
-  else if(hpPct < 60) document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#f5a542,#ffcc66)';
-  else document.getElementById('hpFill').style.background = 'linear-gradient(90deg,#43aa8b,#7bc98f)';
-  
-  document.getElementById('mpFill').style.width = (p.mp / p.mpMax * 100) + '%';
-  document.getElementById('shopGold').textContent = p.gold;
-}
-
-function updateWorldUI(){
-  var w = getWorld(G.stage);
-  document.getElementById('worldChip').textContent = w.icon + ' ' + w.name;
-  document.getElementById('stageChip').textContent = G.stage + '/95';
-}
-
-var notifT;
-function showNotif(txt){
-  var el = document.getElementById('notif');
-  el.textContent = txt;
-  el.classList.remove('show');
-  void el.offsetWidth;
-  el.classList.add('show');
-  clearTimeout(notifT);
-  notifT = setTimeout(function(){ el.classList.remove('show'); }, 1500);
-}
-
-var flashT;
-function flashDamage(){
-  document.body.style.background = '#300';
-  clearTimeout(flashT);
-  flashT = setTimeout(function(){ document.body.style.background = '#000'; }, 80);
-}
-
-// ============ الحقيبة 4x3 ============
-function renderInv(){
-  var grid = document.getElementById('invGrid');
-  var html = '';
-  var items = [];
-  Object.keys(G.inventory).forEach(function(k){
-    if(G.inventory[k] > 0 && ITEMS[k]) items.push({ key:k, data:ITEMS[k], qty:G.inventory[k] });
-  });
-  for(var i = 0; i < 12; i++){
-    if(i < items.length){
-      var it = items[i];
-      html += '<div class="slot" onclick="useItem(\'' + it.key + '\')">' +
-        '<div class="ic">' + it.data.icon + '</div>' +
-        '<div class="nm">' + it.data.name + '</div>' +
-        '<div class="qt">×' + it.qty + '</div>' +
-      '</div>';
-    } else {
-      html += '<div class="slot empty"></div>';
-    }
-  }
-  grid.innerHTML = html;
-}
-
-function useItem(k){
-  var it = ITEMS[k];
-  if(!it || !G.inventory[k]) return;
-  if(it.heal){
-    if(G.player.hp >= G.player.hpMax){ showNotif('صحتك كاملة!'); return; }
-    G.player.hp = Math.min(G.player.hpMax, G.player.hp + it.heal);
-    showNotif('🌿 +' + it.heal);
-  }
-  if(it.mp) G.player.mp = Math.min(G.player.mpMax, G.player.mp + it.mp);
-  G.inventory[k]--;
-  if(G.inventory[k] <= 0) delete G.inventory[k];
-  updateUI();
-  renderInv();
-  saveGame();
-}
-
-function openInv(){ document.getElementById('inv').classList.add('on'); renderInv(); }
-function closeInv(){ document.getElementById('inv').classList.remove('on'); }
-
-// ============ المتجر 5 أعمدة ============
-function openShop(){ document.getElementById('shop').classList.add('on'); renderShop(); }
-function closeShop(){ document.getElementById('shop').classList.remove('on'); }
-
-function renderShop(){
-  var p = G.player;
-  document.getElementById('shopGold').textContent = p.gold;
-  var grid = document.getElementById('shopGrid');
-  var html = '';
-  var list = [];
-  
-  if(G.currentShopTab === 'weapons'){
-    ['fire_sword','ice_sword','royal_sword','dawn_sword','wind_dagger','shadow_dagger','forest_bow','frost_bow','light_bow'].forEach(function(wid){
-      var w = WEAPONS[wid];
-      if(w) list.push({ key:wid, data:w, isOwned:(G.ownedWeapons||[]).indexOf(wid)>=0, action:'buyWeapon', price:w.price });
-    });
-  } else if(G.currentShopTab === 'armors'){
-    ['forest_armor','ice_armor','royal_armor','dawn_armor'].forEach(function(aid){
-      var a = ARMORS[aid];
-      if(a) list.push({ key:aid, data:a, isOwned:(G.ownedArmors||[]).indexOf(aid)>=0, action:'buyArmor', price:a.price });
-    });
-  } else if(G.currentShopTab === 'potions'){
-    ['hp_small','hp_med','hp_big','mp_potion'].forEach(function(pid){
-      var it = ITEMS[pid];
-      if(it) list.push({ key:pid, data:it, isOwned:false, action:'buyPotion', price:it.price });
-    });
-  } else if(G.currentShopTab === 'sell'){
-    Object.keys(G.inventory).forEach(function(k){
-      if(G.inventory[k] > 0 && ITEMS[k] && ITEMS[k].sellPrice){
-        list.push({ key:k, data:ITEMS[k], isOwned:false, action:'sellItem', price:ITEMS[k].sellPrice, qty:G.inventory[k] });
-      }
-    });
-  }
-  
-  list.forEach(function(it){
-    var canBuy = p.gold >= it.price;
-    if(G.currentShopTab === 'sell'){
-      html += '<div class="shop-item" onclick="sellItem(\'' + it.key + '\')">' +
-        '<div class="ic">' + it.data.icon + '</div>' +
-        '<div class="nm">' + it.data.name + '</div>' +
-        '<div style="font-size:9px;color:#fff">×' + it.qty + '</div>' +
-        '<div class="pr">💰 ' + it.price + '</div>' +
-      '</div>';
-    } else if(it.isOwned){
-      html += '<div class="shop-item owned">' +
-        '<div class="ic">' + it.data.icon + '</div>' +
-        '<div class="nm">' + it.data.name + '</div>' +
-        '<div style="color:#43aa8b;font-size:9px">✓</div>' +
-      '</div>';
-    } else {
-      html += '<div class="shop-item rarity-' + (it.data.rarity||'common') + (canBuy?'':' locked') + '"' +
-        (canBuy ? ' onclick="' + it.action + '(\'' + it.key + '\',' + it.price + ')"' : '') + '>' +
-        '<div class="ic">' + it.data.icon + '</div>' +
-        '<div class="nm">' + it.data.name + '</div>' +
-        '<div class="pr">🪙' + it.price + '</div>' +
-      '</div>';
-    }
-  });
-  
-  if(list.length === 0) html = '<div style="color:#888;text-align:center;padding:20px;grid-column:1/-1">لا يوجد شيء</div>';
-  grid.innerHTML = html;
-}
-
-function buyWeapon(wid, price){
-  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
-  if(!G.ownedWeapons) G.ownedWeapons = [];
-  if(G.ownedWeapons.indexOf(wid) >= 0){ showNotif('تملكه بالفعل!'); return; }
-  G.player.gold -= price;
-  G.ownedWeapons.push(wid);
-  showNotif('✅ اشتريت ' + WEAPONS[wid].name);
-  updateUI(); renderShop(); saveGame();
-}
-
-function buyArmor(aid, price){
-  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
-  if(!G.ownedArmors) G.ownedArmors = [];
-  if(G.ownedArmors.indexOf(aid) >= 0){ showNotif('تملكه بالفعل!'); return; }
-  G.player.gold -= price;
-  G.ownedArmors.push(aid);
-  var a = ARMORS[aid];
-  G.player.hpMax += a.hp;
-  G.player.hp += a.hp;
-  G.player.def += a.def;
-  showNotif('✅ اشتريت ' + a.name);
-  updateUI(); renderShop(); saveGame();
-}
-
-function buyPotion(k, price){
-  if(G.player.gold < price){ showNotif('ذهب غير كافٍ!'); return; }
-  G.player.gold -= price;
-  G.inventory[k] = (G.inventory[k] || 0) + 1;
-  showNotif('✅ اشتريت ' + ITEMS[k].name);
-  updateUI(); renderShop(); saveGame();
-}
-
-function sellItem(k){
-  if(!G.inventory[k]) return;
-  var price = ITEMS[k].sellPrice || 5;
-  G.inventory[k]--;
-  if(G.inventory[k] <= 0) delete G.inventory[k];
-  G.player.gold += price;
-  showNotif('💰 +' + price + ' ذهب');
-  updateUI(); renderShop(); saveGame();
-}
-
-// ============ الكتيب مع الصناعة ============
-function openBook(){ document.getElementById('book').classList.add('on'); renderBook(); }
-function closeBook(){ document.getElementById('book').classList.remove('on'); }
-
-function renderBook(){
-  var tab = G.currentBookTab;
-  var html = '';
-  var list = tab === 'weapons' ? WEAPONS : tab === 'armors' ? ARMORS : ITEMS;
-  
-  Object.keys(list).forEach(function(k){
-    var it = list[k];
-    if(!it.recipe) return;
-    
-    // تحقق من المواد
-    var canCraft = true;
-    var matsHtml = '';
-    Object.keys(it.recipe).forEach(function(m){
-      var need = it.recipe[m];
-      var have = G.inventory[m] || 0;
-      if(have < need) canCraft = false;
-      var mi = ITEMS[m] || WEAPONS[m] || ARMORS[m];
-      var name = mi ? (mi.icon + ' ' + mi.name) : m;
-      var cls = have >= need ? 'ok' : 'miss';
-      matsHtml += '<span class="' + cls + '">' + name + ' ×' + need + ' (' + have + ')</span>';
-    });
-    
-    var stats = '';
-    if(it.damage) stats = '⚔️ ' + it.damage + ' ضرر';
-    if(it.hp) stats = '❤️ +' + it.hp + ' | 🛡️ +' + it.def;
-    if(it.heal) stats = '❤️ +' + it.heal;
-    if(it.mp) stats = '⚡ +' + it.mp;
-    
-    html += '<div class="recipe-card' + (canCraft ? ' craftable' : ' locked') + '" onclick="craftItem(\'' + k + '\',\'' + tab + '\')">' +
-      '<div class="ic">' + (it.icon || '❓') + '</div>' +
-      '<div class="info">' +
-        '<div class="nm">' + (it.name || k) + '</div>' +
-        '<div class="stats">' + stats + '</div>' +
-        '<div class="mats">🧪 ' + matsHtml + '</div>' +
-        (canCraft ? '<div class="source">👆 اضغط للصناعة</div>' : '<div class="source" style="color:#ff8888">✗ مواد ناقصة</div>') +
-      '</div>' +
-    '</div>';
-  });
-  
-  if(!html) html = '<div style="color:#888;text-align:center;padding:20px">لا يوجد وصفات</div>';
-  document.getElementById('bookContent').innerHTML = html;
-}
-
-function craftItem(key, tab){
-  var list = tab === 'weapons' ? WEAPONS : tab === 'armors' ? ARMORS : ITEMS;
-  var it = list[key];
-  if(!it || !it.recipe){ showNotif('وصفة غير متوفرة!'); return; }
-  
-  // تحقق
-  for(var m in it.recipe){
-    if((G.inventory[m] || 0) < it.recipe[m]){
-      showNotif('❌ مواد ناقصة: ' + (ITEMS[m] ? ITEMS[m].name : m));
-      return;
-    }
-  }
-  
-  // خصم
-  for(var m in it.recipe){
-    G.inventory[m] -= it.recipe[m];
-    if(G.inventory[m] <= 0) delete G.inventory[m];
-  }
-  
-  // أضف
-  if(tab === 'weapons'){
-    if(!G.ownedWeapons) G.ownedWeapons = [];
-    if(G.ownedWeapons.indexOf(key) >= 0){
-      // اجعله سلاح قابل للتكديس
-      G.inventory['wpn_' + key] = (G.inventory['wpn_' + key] || 0) + 1;
-    } else {
-      G.ownedWeapons.push(key);
-    }
-  } else if(tab === 'armors'){
-    if(!G.ownedArmors) G.ownedArmors = [];
-    if(G.ownedArmors.indexOf(key) >= 0){
-      G.inventory['arm_' + key] = (G.inventory['arm_' + key] || 0) + 1;
-    } else {
-      G.ownedArmors.push(key);
-    }
+  if (ji === item.correct) {
+    correctCount++;
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ إجابة صحيحة! ' + item.why;
   } else {
-    // جرعة
-    G.inventory[key] = (G.inventory[key] || 0) + 1;
+    btn.classList.add('wrong');
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ إجابة غير صحيحة. ' + item.why;
   }
-  
-  G.stats.crafted++;
-  showNotif('⚒️ صنعت ' + it.name + '!');
-  spawnParticles(G.player.x, G.player.y, '#f5c542', 20);
-  updateUI();
-  updateQuests();
-  renderBook();
-  saveGame();
-}
 
-// ============ المرحلة التالية ============
-function nextStage(){
-  G.stage++;
-  if(G.stage > 95) G.stage = 1;
-  G.world = getWorld(G.stage).id;
-  generateWorld();
-  updateWorldUI();
-  updateUI();
-  showNotif('⚔️ ' + getWorld(G.stage).name);
-  saveGame();
-}
-
-// ============ الحفظ ============
-function saveGame(){
-  try{
-    localStorage.setItem('afterdark_2d_v1', JSON.stringify({
-      stage:G.stage, world:G.world,
-      player:{ level:G.player.level, hp:G.player.hp, hpMax:G.player.hpMax, gold:G.player.gold, xp:G.player.xp, xpNext:G.player.xpNext, atk:G.player.atk, def:G.player.def },
-      inventory:G.inventory,
-      ownedWeapons:G.ownedWeapons || [],
-      ownedArmors:G.ownedArmors || [],
-      currentWeapon:G.currentWeapon,
-      arrowsCount:G.arrowsCount,
-      stats:G.stats,
-      char:G._char
-    }));
-  }catch(e){}
-}
-function loadSave(){
-  try{ var r = localStorage.getItem('afterdark_2d_v1'); return r ? JSON.parse(r) : null; }catch(e){ return null; }
-}
-window.addEventListener('beforeunload', saveGame);
-setInterval(saveGame, 15000);
-
-// ============ الإدخال ============
-function setupInput(){
-  var keys = {};
-  window.addEventListener('keydown', function(e){
-    keys[e.key] = true;
-    updK();
-    if(e.key === ' ') e.preventDefault();
-    if(e.key === '1') switchWeapon('iron_sword');
-    if(e.key === '2') switchWeapon('wood_bow');
-    if(e.key === '3') switchWeapon('training_dagger');
-    if(e.key === 'i' || e.key === 'I') openInv();
-    if(e.key === 'b' || e.key === 'B') openShop();
-    if(e.key === 'm' || e.key === 'M') openBook();
-    if(e.key === 'e' || e.key === 'E') useFirstHerb();
-  });
-  window.addEventListener('keyup', function(e){ keys[e.key] = false; updK(); });
-  
-  function updK(){
-    var f = 0, r = 0;
-    if(keys['w'] || keys['W'] || keys['ArrowUp']) f++;
-    if(keys['s'] || keys['S'] || keys['ArrowDown']) f--;
-    if(keys['a'] || keys['A'] || keys['ArrowLeft']) r--;
-    if(keys['d'] || keys['D'] || keys['ArrowRight']) r++;
-    G.input.f = f;
-    G.input.r = r;
+  answered++;
+  if (answered === questions.length) {
+    const pct = Math.round((correctCount / questions.length) * 100);
+    let msg = pct === 100 ? 'ممتاز! أنت متمكن من الدرس 🎉'
+            : pct >= 67 ? 'جيد جدًا! راجع الأخطاء وتراجع الدرس مرة أخرى 👌'
+            : 'محتاج تراجع الدرس تاني، ركز على التريكات 💪';
+    scoreBox.classList.add('show');
+    scoreBox.innerHTML = `نتيجتك: <b>${correctCount} / ${questions.length}</b>${msg}`;
+    scoreBox.scrollIntoView({behavior:'smooth', block:'center'});
   }
-  
-  // جويستيك
-  var joy = document.getElementById('joy');
-  var knob = joy.querySelector('.knob');
-  var active = false, cx0 = 0, cy0 = 0;
-  
-  function getCenter(el){
-    var r = el.getBoundingClientRect();
-    return { x: r.left + r.width/2, y: r.top + r.height/2 };
-  }
-  function handle(t){
-    var dx = t.clientX - cx0;
-    var dy = t.clientY - cy0;
-    var d = Math.hypot(dx, dy);
-    var max = 50;
-    var cd = Math.min(d, max);
-    var a = Math.atan2(dy, dx);
-    var nx = Math.cos(a) * cd, ny = Math.sin(a) * cd;
-    knob.style.transform = 'translate(calc(-50% + ' + nx + 'px), calc(-50% + ' + ny + 'px))';
-    G.joy.jx = nx / max;
-    G.joy.jy = -(ny / max);
-  }
-  
-  joy.addEventListener('touchstart', function(e){
-    e.preventDefault();
-    active = true;
-    var c = getCenter(joy);
-    cx0 = c.x; cy0 = c.y;
-    handle(e.touches[0]);
-  }, {passive:false});
-  joy.addEventListener('touchmove', function(e){
-    e.preventDefault();
-    if(!active) return;
-    handle(e.touches[0]);
-  }, {passive:false});
-  joy.addEventListener('touchend', function(e){
-    e.preventDefault();
-    active = false;
-    G.joy.jx = 0; G.joy.jy = 0;
-    knob.style.transform = 'translate(-50%,-50%)';
-  }, {passive:false});
-  
-  // أزرار
-  var fb = document.getElementById('btn-fire');
-  fb.addEventListener('touchstart', function(e){ e.preventDefault(); G.input.attack = true; }, {passive:false});
-  fb.addEventListener('touchend', function(e){ e.preventDefault(); G.input.attack = false; }, {passive:false});
-  fb.addEventListener('mousedown', function(e){ e.preventDefault(); G.input.attack = true; });
-  fb.addEventListener('mouseup', function(){ G.input.attack = false; });
-  
-  var bb = document.getElementById('btn-block');
-  bb.addEventListener('touchstart', function(e){ e.preventDefault(); G.input.block = true; bb.classList.add('on'); }, {passive:false});
-  bb.addEventListener('touchend', function(e){ e.preventDefault(); G.input.block = false; bb.classList.remove('on'); }, {passive:false});
-  bb.addEventListener('mousedown', function(e){ e.preventDefault(); G.input.block = true; bb.classList.add('on'); });
-  bb.addEventListener('mouseup', function(){ G.input.block = false; bb.classList.remove('on'); });
-  
-  document.getElementById('btn-switch').addEventListener('click', switchNext);
-  document.getElementById('btn-switch').addEventListener('touchstart', function(e){ e.preventDefault(); switchNext(); }, {passive:false});
-  
-  document.getElementById('btn-heal').addEventListener('click', useFirstHerb);
-  document.getElementById('btn-heal').addEventListener('touchstart', function(e){ e.preventDefault(); useFirstHerb(); }, {passive:false});
-  
-  document.getElementById('btn-bag').addEventListener('click', openInv);
-  document.getElementById('btn-bag').addEventListener('touchstart', function(e){ e.preventDefault(); openInv(); }, {passive:false});
-  
-  document.getElementById('btn-shop').addEventListener('click', openShop);
-  document.getElementById('btn-shop').addEventListener('touchstart', function(e){ e.preventDefault(); openShop(); }, {passive:false});
-  
-  document.getElementById('btn-book').addEventListener('click', openBook);
-  document.getElementById('btn-book').addEventListener('touchstart', function(e){ e.preventDefault(); openBook(); }, {passive:false});
-  
-  // التبويبات
-  document.querySelectorAll('[data-shop]').forEach(function(el){
-    var h = function(e){ if(e) e.preventDefault(); document.querySelectorAll('[data-shop]').forEach(function(t){ t.classList.remove('active'); }); el.classList.add('active'); G.currentShopTab = el.dataset.shop; renderShop(); };
-    el.addEventListener('click', h);
-    el.addEventListener('touchstart', h, {passive:false});
-  });
-  document.querySelectorAll('[data-book]').forEach(function(el){
-    var h = function(e){ if(e) e.preventDefault(); document.querySelectorAll('[data-book]').forEach(function(t){ t.classList.remove('active'); }); el.classList.add('active'); G.currentBookTab = el.dataset.book; renderBook(); };
-    el.addEventListener('click', h);
-    el.addEventListener('touchstart', h, {passive:false});
-  });
-}
-
-function switchWeapon(id){
-  if(!WEAPONS[id] || G.currentWeapon === id) return;
-  G.currentWeapon = id;
-  showNotif(WEAPONS[id].icon + ' ' + WEAPONS[id].name);
-}
-
-function switchNext(){
-  var all = ['iron_sword', 'wood_bow', 'training_dagger'];
-  if(G.ownedWeapons){
-    G.ownedWeapons.forEach(function(w){ if(all.indexOf(w) < 0) all.push(w); });
-  }
-  var idx = all.indexOf(G.currentWeapon);
-  switchWeapon(all[(idx+1) % all.length]);
-}
-
-function useFirstHerb(){
-  var order = ['mushroom', 'red_herb', 'herb', 'hp_big', 'hp_med', 'hp_small', 'blue_herb', 'berry'];
-  for(var i = 0; i < order.length; i++){
-    if(G.inventory[order[i]] > 0){ useItem(order[i]); return; }
-  }
-  showNotif('لا توجد أعشاب!');
-}
-
-// ============ البدء ============
-function startGame(char){
-  document.getElementById('start').style.display = 'none';
-  G._char = char;
-  
-  var save = loadSave();
-  if(save){
-    G.stage = save.stage || 1;
-    G.world = save.world || 1;
-    if(save.player){
-      var p = G.player;
-      p.level = save.player.level || 1;
-      p.hpMax = save.player.hpMax || 150;
-      p.hp = save.player.hp || p.hpMax;
-      p.gold = save.player.gold || 300;
-      p.xp = save.player.xp || 0;
-      p.xpNext = save.player.xpNext || 100;
-      p.atk = save.player.atk || 20;
-      p.def = save.player.def || 8;
-    }
-    if(save.inventory) for(var k in save.inventory) G.inventory[k] = save.inventory[k];
-    G.ownedWeapons = save.ownedWeapons || ['iron_sword', 'wood_bow', 'training_dagger'];
-    G.ownedArmors = save.ownedArmors || ['adv_armor'];
-    G.currentWeapon = save.currentWeapon || 'iron_sword';
-    G.arrowsCount = save.arrowsCount || 30;
-    if(save.stats) G.stats = save.stats;
-  } else {
-    G.inventory = { 
-      herb:5, red_herb:3, blue_herb:3, mushroom:2, berry:5, hp_small:3,
-      wood:10, iron:8, leather:5, cloth:4, rope:3, stone:6
-    };
-    G.ownedWeapons = ['iron_sword', 'wood_bow', 'training_dagger'];
-    G.ownedArmors = ['adv_armor'];
-    G.arrowsCount = 30;
-  }
-  
-  generateWorld();
-  updateWorldUI();
-  updateUI();
-  setupInput();
-  
-  G.running = true;
-  G.paused = false;
-  lastT = performance.now();
-  requestAnimationFrame(loop);
-  
-  var w = getWorld(G.stage);
-  showNotif('⚔️ ' + w.name + ' — المرحلة ' + G.stage);
-}
-
-resizeCanvas();
-
-var s = loadSave();
-if(s){
-  var sb = document.getElementById('start');
-  var cb = document.createElement('button');
-  cb.className = 'tbtn';
-  cb.textContent = '📂 متابعة (المرحلة ' + s.stage + ')';
-  cb.onclick = function(){ startGame(s.char || 'yousef'); };
-  sb.insertBefore(cb, sb.querySelector('button'));
-}
-
+});
 </script>
+
 </body>
-        </html>
+  </html>
